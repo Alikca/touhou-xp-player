@@ -1338,7 +1338,7 @@ body, html {
 /* ==========================================================================
    DESKTOP PET (SHIMEJI) STYLES
    ========================================================================== */
-#desktop-pet {
+#desktop-pet, .desktop-pet {
     position: absolute;
     width: 120px;
     height: 160px;
@@ -1350,16 +1350,16 @@ body, html {
     display: none; /* hidden by default */
 }
 
-#desktop-pet:active {
+#desktop-pet:active, .desktop-pet:active {
     cursor: grabbing;
 }
 
-#desktop-pet.dragging {
+#desktop-pet.dragging, .desktop-pet.dragging {
     filter: drop-shadow(4px 4px 6px rgba(0, 0, 0, 0.5));
 }
 
 /* Ensure pixel-art is rendered crisp without blur */
-#desktop-pet, .pet-sprite {
+#desktop-pet, .desktop-pet, .pet-sprite {
     image-rendering: -moz-crisp-edges;
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;

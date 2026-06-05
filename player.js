@@ -534,17 +534,15 @@ function closeWindow(id) {
 
 function openWindow(id) {
     if (id === 'toggle-pet') {
-        toggleDesktopPet();
+        toggleDesktopPet('reimu');
         return;
     }
     if (id === 'toggle-marisa') {
-        playSystemSound(XP_ERROR_URL);
-        showErrorDialog(currentLang === 'es' ? "Marisa Shimeji no está disponible todavía. ¡La implementaremos pronto!" : "Marisa Shimeji is not available yet. We will implement it soon!");
+        toggleDesktopPet('marisa');
         return;
     }
     if (id === 'toggle-cirno') {
-        playSystemSound(XP_ERROR_URL);
-        showErrorDialog(currentLang === 'es' ? "Cirno Shimeji no está disponible todavía. ¡La implementaremos pronto!" : "Cirno Shimeji is not available yet. We will implement it soon!");
+        toggleDesktopPet('cirno');
         return;
     }
     const win = document.getElementById(id);
@@ -2303,15 +2301,20 @@ const PET_SPRITES = {
 };
 
 class Shimeji {
-    constructor() {
-        this.element = document.getElementById('desktop-pet');
-        if (!this.element) {
-            this.element = document.createElement('div');
-            this.element.id = 'desktop-pet';
-            document.body.appendChild(this.element);
-        }
+    constructor(character = 'reimu') {
+        this.character = character;
+        this.id = `desktop-pet-${character}-${Date.now()}`;
+        this.element = document.createElement('div');
+        this.element.id = this.id;
+        this.element.className = 'desktop-pet';
+        document.body.appendChild(this.element);
         
         this.element.style.touchAction = 'none';
+        
+        // Define sizes per character
+        this.w = character === 'cirno' ? 100 : 120;
+        this.h = character === 'cirno' ? 133 : 160;
+        this.floatOffset = 0;
         
         this.x = Math.random() * (window.innerWidth - 100) + 50;
         this.y = 50;
@@ -2440,22 +2443,43 @@ class Shimeji {
         }
         
         const rand = Math.random();
-        if (rand < 0.4) {
-            this.state = 'idle';
-            this.vx = 0;
-            this.vy = 0;
-            this.behaviorTimer = performance.now() + Math.random() * 3000 + 2000;
-        } else if (rand < 0.8) {
-            this.direction = Math.random() < 0.5 ? 1 : -1;
-            this.state = 'walk';
-            this.vx = this.direction * 1.0;
-            this.vy = 0;
-            this.behaviorTimer = performance.now() + Math.random() * 3000 + 2000;
+        if (this.character === 'cirno') {
+            if (rand < 0.4) {
+                this.state = 'idle';
+                this.vx = 0;
+                this.vy = 0;
+                this.behaviorTimer = performance.now() + Math.random() * 3000 + 2000;
+            } else if (rand < 0.7) {
+                this.direction = Math.random() < 0.5 ? 1 : -1;
+                this.state = 'walk';
+                this.vx = this.direction * 1.0;
+                this.vy = 0;
+                this.behaviorTimer = performance.now() + Math.random() * 3000 + 2000;
+            } else {
+                this.state = 'animation';
+                this.vx = 0;
+                this.vy = 0;
+                this.animFrameIndex = 0;
+                this.animTimer = 0;
+            }
         } else {
-            this.state = 'sit';
-            this.vx = 0;
-            this.vy = 0;
-            this.behaviorTimer = performance.now() + Math.random() * 4000 + 2000;
+            if (rand < 0.4) {
+                this.state = 'idle';
+                this.vx = 0;
+                this.vy = 0;
+                this.behaviorTimer = performance.now() + Math.random() * 3000 + 2000;
+            } else if (rand < 0.8) {
+                this.direction = Math.random() < 0.5 ? 1 : -1;
+                this.state = 'walk';
+                this.vx = this.direction * 1.0;
+                this.vy = 0;
+                this.behaviorTimer = performance.now() + Math.random() * 3000 + 2000;
+            } else {
+                this.state = 'sit';
+                this.vx = 0;
+                this.vy = 0;
+                this.behaviorTimer = performance.now() + Math.random() * 4000 + 2000;
+            }
         }
     }
     
@@ -2463,6 +2487,13 @@ class Shimeji {
         const now = performance.now();
         const dt = Math.min(now - this.lastTime, 100);
         this.lastTime = now;
+        
+        if (this.character === 'cirno' && this.state !== 'drag') {
+            const time = performance.now() * 0.004;
+            this.floatOffset = 18 + Math.sin(time) * 6;
+        } else {
+            this.floatOffset = 0;
+        }
         
         if (this.isDragging) {
             const dt_ms = now - this.lastMouseTime;
@@ -2487,8 +2518,8 @@ class Shimeji {
             this.x = this.mouseX - this.dragOffsetX;
             this.y = this.mouseY - this.dragOffsetY;
             
-            this.x = Math.max(0, Math.min(window.innerWidth - PET_SIZE_W, this.x));
-            this.y = Math.max(0, Math.min(window.innerHeight - 30 - PET_SIZE_H, this.y));
+            this.x = Math.max(0, Math.min(window.innerWidth - this.w, this.x));
+            this.y = Math.max(0, Math.min(window.innerHeight - 30 - this.h, this.y));
             
             this.attachedPlatform = null;
             this.lastPlatformRect = null;
@@ -2514,7 +2545,7 @@ class Shimeji {
                     }
                     this.lastPlatformRect = rect;
                     
-                    const center = this.x + (PET_SIZE_W / 2);
+                    const center = this.x + (this.w / 2);
                     if (center < rect.left || center > rect.right) {
                         this.attachedPlatform = null;
                         this.lastPlatformRect = null;
@@ -2537,22 +2568,22 @@ class Shimeji {
                 
                 if (this.attachedPlatform) {
                     const rect = this.lastPlatformRect;
-                    const center = this.x + (PET_SIZE_W / 2);
+                    const center = this.x + (this.w / 2);
                     if (center < rect.left + 5 && this.direction === -1) {
                         if (Math.random() < 0.6) {
                             this.direction = 1;
                             this.vx = 1.0;
-                            this.x = rect.left - (PET_SIZE_W / 2) + 6;
+                            this.x = rect.left - (this.w / 2) + 6;
                         }
                     } else if (center > rect.right - 5 && this.direction === 1) {
                         if (Math.random() < 0.6) {
                             this.direction = -1;
                             this.vx = -1.0;
-                            this.x = rect.right - (PET_SIZE_W / 2) - 6;
+                            this.x = rect.right - (this.w / 2) - 6;
                         }
                     }
                 } else {
-                    const floorY = window.innerHeight - 30 - PET_SIZE_H;
+                    const floorY = window.innerHeight - 30 - this.h;
                     if (this.y < floorY) {
                         this.state = 'fall';
                     } else {
@@ -2569,7 +2600,7 @@ class Shimeji {
                 this.x += this.vx;
                 this.y += this.vy;
                 
-                const floorY = window.innerHeight - 30 - PET_SIZE_H;
+                const floorY = window.innerHeight - 30 - this.h;
                 if (this.y >= floorY) {
                     this.y = floorY;
                     if (this.vy > 3) {
@@ -2587,13 +2618,13 @@ class Shimeji {
                 this.vx = 0;
                 this.vy = 0;
                 if (!this.attachedPlatform) {
-                    const floorY = window.innerHeight - 30 - PET_SIZE_H;
+                    const floorY = window.innerHeight - 30 - this.h;
                     this.y = floorY;
                 }
             }
             
             // Screen edge boundary checks
-            const rightBound = window.innerWidth - PET_SIZE_W;
+            const rightBound = window.innerWidth - this.w;
             if (this.x <= 0) {
                 this.x = 0;
                 if (Math.abs(this.vx) > 1) {
@@ -2621,14 +2652,14 @@ class Shimeji {
             // Platform landing check while falling
             if (!this.attachedPlatform && this.state !== 'climb' && this.vy >= 0) {
                 const platforms = this.getPlatforms();
-                const feetY = this.y + PET_SIZE_H;
+                const feetY = this.y + this.h;
                 for (let i = 0; i < platforms.length; i++) {
                     const plat = platforms[i];
-                    const center = this.x + (PET_SIZE_W / 2);
+                    const center = this.x + (this.w / 2);
                     if (center >= plat.left && center <= plat.right) {
                         const prevFeetY = feetY - this.vy;
                         if (feetY >= plat.top && prevFeetY <= plat.top + 6) {
-                            this.y = plat.top - PET_SIZE_H;
+                            this.y = plat.top - this.h;
                             if (this.vy > 3) {
                                 this.vy = -this.vy * 0.3;
                                 this.vx *= 0.7;
@@ -2647,17 +2678,18 @@ class Shimeji {
             }
         }
         
-        if (!this.isDragging && this.state !== 'fall' && performance.now() > this.behaviorTimer) {
+        if (!this.isDragging && this.state !== 'fall' && this.state !== 'animation' && performance.now() > this.behaviorTimer) {
             this.chooseBehavior();
         }
         
-        if (!this.isDragging && !this.attachedPlatform && this.state !== 'climb' && this.y < window.innerHeight - 30 - PET_SIZE_H) {
+        if (!this.isDragging && !this.attachedPlatform && this.state !== 'climb' && this.y < window.innerHeight - 30 - this.h) {
             if (this.vy > 0.5) {
                 this.state = 'fall';
             }
         }
         
-        const framesList = (typeof SPRITE_MAP !== 'undefined' && SPRITE_MAP[this.state]) || (typeof SPRITE_MAP !== 'undefined' && SPRITE_MAP['idle']) || [];
+        const charMaps = PET_SPRITE_MAPS[this.character] || PET_SPRITE_MAPS['reimu'];
+        const framesList = charMaps[this.state] || charMaps['idle'] || [];
         if (this.state !== this.prevState) {
             this.animFrameIndex = 0;
             this.animTimer = 0;
@@ -2668,7 +2700,17 @@ class Shimeji {
         this.animTimer += dt;
         if (this.animTimer > frameDuration) {
             if (framesList.length > 0) {
-                this.animFrameIndex = (this.animFrameIndex + 1) % framesList.length;
+                if (this.state === 'animation') {
+                    if (this.animFrameIndex + 1 >= framesList.length) {
+                        this.state = 'idle';
+                        this.animFrameIndex = 0;
+                        this.behaviorTimer = performance.now() + Math.random() * 3000 + 2000;
+                    } else {
+                        this.animFrameIndex++;
+                    }
+                } else {
+                    this.animFrameIndex = (this.animFrameIndex + 1) % framesList.length;
+                }
             }
             this.animTimer = 0;
         }
@@ -2683,58 +2725,62 @@ class Shimeji {
     }
     
     render() {
-        if (spritesImageLoaded) {
-            let frames = SPRITE_MAP[this.state] || SPRITE_MAP['idle'];
-            let frame = frames[this.animFrameIndex % frames.length];
-            if (frame) {
-                if (!this.spriteEl || this.spriteEl.tagName !== 'CANVAS') {
-                    if (this.spriteEl) {
-                        this.spriteEl.remove();
-                    }
-                    this.spriteEl = document.createElement('canvas');
-                    this.spriteEl.className = 'pet-sprite';
-                    this.spriteEl.style.position = 'absolute';
-                    this.spriteEl.style.bottom = '0';
-                    this.spriteEl.style.left = '50%';
-                    this.spriteEl.style.transformOrigin = 'bottom center';
-                    this.spriteEl.style.imageRendering = 'pixelated';
-                    this.element.appendChild(this.spriteEl);
+        const charMaps = PET_SPRITE_MAPS[this.character] || PET_SPRITE_MAPS['reimu'];
+        let frames = charMaps[this.state] || charMaps['idle'];
+        let frame = frames[this.animFrameIndex % frames.length];
+        if (frame) {
+            if (!this.spriteEl || this.spriteEl.tagName !== 'CANVAS') {
+                if (this.spriteEl) {
+                    this.spriteEl.remove();
+                }
+                this.spriteEl = document.createElement('canvas');
+                this.spriteEl.className = 'pet-sprite';
+                this.spriteEl.style.position = 'absolute';
+                this.spriteEl.style.bottom = '0';
+                this.spriteEl.style.left = '50%';
+                this.spriteEl.style.transformOrigin = 'bottom center';
+                this.spriteEl.style.imageRendering = 'pixelated';
+                this.element.appendChild(this.spriteEl);
+            }
+            
+            if (this.element.childNodes.length > 1 || (this.element.childNodes.length === 1 && this.element.childNodes[0] !== this.spriteEl)) {
+                this.element.innerHTML = '';
+                this.element.appendChild(this.spriteEl);
+            }
+            
+            let currentFrame = frame;
+            let isHighres = false;
+            
+            if (frame.type === 'highres' || frame.type === 'highres_walk' || frame.type === 'highres_fall' || frame.type === 'highres_sit' || frame.type === 'highres_animation') {
+                let img;
+                const charFrames = PET_FRAMES[this.character] || PET_FRAMES['reimu'];
+                if (frame.type === 'highres') {
+                    img = charFrames.idle[frame.index];
+                } else if (frame.type === 'highres_walk') {
+                    img = charFrames.walk[frame.index];
+                } else if (frame.type === 'highres_fall') {
+                    img = charFrames.fall[frame.index];
+                } else if (frame.type === 'highres_sit') {
+                    img = charFrames.sit[frame.index];
+                } else {
+                    img = charFrames.animation[frame.index];
                 }
                 
-                if (this.element.childNodes.length > 1 || (this.element.childNodes.length === 1 && this.element.childNodes[0] !== this.spriteEl)) {
-                    this.element.innerHTML = '';
-                    this.element.appendChild(this.spriteEl);
-                }
-                
-                let currentFrame = frame;
-                let isHighres = false;
-                
-                if (frame.type === 'highres' || frame.type === 'highres_walk' || frame.type === 'highres_fall' || frame.type === 'highres_sit') {
-                    let img;
-                    if (frame.type === 'highres') {
-                        img = idleFrames[frame.index];
-                    } else if (frame.type === 'highres_walk') {
-                        img = walkFrames[frame.index];
-                    } else if (frame.type === 'highres_fall') {
-                        img = fallFrames[frame.index];
-                    } else {
-                        img = sitFrames[frame.index];
-                    }
+                if (img && img.complete && img.naturalWidth > 0) {
+                    isHighres = true;
+                    this.spriteEl.width = img.width;
+                    this.spriteEl.height = img.height;
                     
-                    if (img && img.complete && img.naturalWidth > 0) {
-                        isHighres = true;
-                        this.spriteEl.width = img.width;
-                        this.spriteEl.height = img.height;
-                        
-                        const ctx = this.spriteEl.getContext('2d');
-                        ctx.clearRect(0, 0, img.width, img.height);
-                        ctx.drawImage(img, 0, 0);
-                        
-                        const displayH = PET_SIZE_H;
-                        const displayW = (img.width / img.height) * displayH;
-                        this.spriteEl.style.width = `${displayW}px`;
-                        this.spriteEl.style.height = `${displayH}px`;
-                    } else {
+                    const ctx = this.spriteEl.getContext('2d');
+                    ctx.clearRect(0, 0, img.width, img.height);
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const displayH = this.h;
+                    const displayW = (img.width / img.height) * displayH;
+                    this.spriteEl.style.width = `${displayW}px`;
+                    this.spriteEl.style.height = `${displayH}px`;
+                } else {
+                    if (this.character === 'reimu') {
                         if (frame.type === 'highres') {
                             currentFrame = { r: 2, c: this.animFrameIndex % 4 };
                         } else if (frame.type === 'highres_walk') {
@@ -2744,64 +2790,68 @@ class Shimeji {
                         } else {
                             currentFrame = { r: 19, c: this.animFrameIndex % 4 };
                         }
+                    } else {
+                        // For marisa, if highres image is not ready yet, do nothing (wait for load)
+                        return;
                     }
                 }
-                
-                if (!isHighres) {
-                    const cellW = 24;
-                    const cellH = 32;
-                    this.spriteEl.width = cellW;
-                    this.spriteEl.height = cellH;
-                    
-                    const ctx = this.spriteEl.getContext('2d');
-                    ctx.clearRect(0, 0, cellW, cellH);
-                    
-                    const sx = currentFrame.c * cellW;
-                    const sy = currentFrame.r * cellH;
-                    
-                    ctx.drawImage(spritesImage, sx, sy, cellW, cellH, 0, 0, cellW, cellH);
-                    
-                    try {
-                        const imgData = ctx.getImageData(0, 0, cellW, cellH);
-                        const data = imgData.data;
-                        for (let i = 0; i < data.length; i += 4) {
-                            const r = data[i];
-                            const g = data[i+1];
-                            const b = data[i+2];
-                            const diff = Math.abs(r - 47) + Math.abs(g - 95) + Math.abs(b - 115);
-                            if (diff < 30) {
-                                data[i+3] = 0;
-                            }
-                        }
-                        ctx.putImageData(imgData, 0, 0);
-                    } catch (e) {
-                        console.error("Transparency error:", e);
-                    }
-                    
-                    const displayW = cellW * SPRITE_SCALE;
-                    const displayH = cellH * SPRITE_SCALE;
-                    this.spriteEl.style.width = `${displayW}px`;
-                    this.spriteEl.style.height = `${displayH}px`;
-                }
-                
-                this.spriteEl.style.display = 'block';
-                
-                const scaleX = this.direction === -1 ? -1 : 1;
-                let rotation = 0;
-                if (this.state === 'climb') {
-                    rotation = this.direction === -1 ? 90 : -90;
-                }
-                this.spriteEl.style.transform = `translateX(-50%) scaleX(${scaleX}) rotate(${rotation}deg)`;
-                
-                this.element.style.backgroundImage = 'none';
-                this.element.style.width = `${PET_SIZE_W}px`;
-                this.element.style.height = `${PET_SIZE_H}px`;
-                this.element.style.transform = 'none';
-                
-                this.element.style.left = `${this.x}px`;
-                this.element.style.top = `${this.y}px`;
-                return;
             }
+            
+            if (!isHighres && this.character === 'reimu' && spritesImageLoaded) {
+                const cellW = 24;
+                const cellH = 32;
+                this.spriteEl.width = cellW;
+                this.spriteEl.height = cellH;
+                
+                const ctx = this.spriteEl.getContext('2d');
+                ctx.clearRect(0, 0, cellW, cellH);
+                
+                const sx = currentFrame.c * cellW;
+                const sy = currentFrame.r * cellH;
+                
+                ctx.drawImage(spritesImage, sx, sy, cellW, cellH, 0, 0, cellW, cellH);
+                
+                try {
+                    const imgData = ctx.getImageData(0, 0, cellW, cellH);
+                    const data = imgData.data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i+1];
+                        const b = data[i+2];
+                        const diff = Math.abs(r - 47) + Math.abs(g - 95) + Math.abs(b - 115);
+                        if (diff < 30) {
+                            data[i+3] = 0;
+                        }
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                } catch (e) {
+                    console.error("Transparency error:", e);
+                }
+                
+                const displayW = cellW * SPRITE_SCALE;
+                const displayH = cellH * SPRITE_SCALE;
+                this.spriteEl.style.width = `${displayW}px`;
+                this.spriteEl.style.height = `${displayH}px`;
+            }
+            
+            this.spriteEl.style.display = 'block';
+            this.spriteEl.style.bottom = `${this.floatOffset || 0}px`;
+            
+            const scaleX = this.direction === -1 ? -1 : 1;
+            let rotation = 0;
+            if (this.state === 'climb') {
+                rotation = this.direction === -1 ? 90 : -90;
+            }
+            this.spriteEl.style.transform = `translateX(-50%) scaleX(${scaleX}) rotate(${rotation}deg)`;
+            
+            this.element.style.backgroundImage = 'none';
+            this.element.style.width = `${this.w}px`;
+            this.element.style.height = `${this.h}px`;
+            this.element.style.transform = 'none';
+            
+            this.element.style.left = `${this.x}px`;
+            this.element.style.top = `${this.y}px`;
+            return;
         }
         
         if (this.spriteEl) {
@@ -2820,8 +2870,8 @@ class Shimeji {
             this.element.insertBefore(svgNode, this.element.firstChild);
         }
         
-        this.element.style.width = `${PET_SIZE_W}px`;
-        this.element.style.height = `${PET_SIZE_H}px`;
+        this.element.style.width = `${this.w}px`;
+        this.element.style.height = `${this.h}px`;
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
         
@@ -2834,31 +2884,34 @@ class Shimeji {
         this.element.removeEventListener('pointermove', this.onPointerMove);
         this.element.removeEventListener('pointerup', this.onPointerUp);
         this.element.style.display = 'none';
-        this.element.innerHTML = '';
+        this.element.remove();
         this.spriteEl = null;
     }
 }
 
-let activePet = null;
+let activePets = [];
 let petAnimationId = null;
 
 function petLoop() {
-    if (activePet) {
-        activePet.update();
+    if (activePets.length > 0) {
+        activePets.forEach(pet => pet.update());
         petAnimationId = requestAnimationFrame(petLoop);
+    } else {
+        petAnimationId = null;
     }
 }
 
-function toggleDesktopPet() {
-    if (activePet) {
-        if (petAnimationId) {
-            cancelAnimationFrame(petAnimationId);
-            petAnimationId = null;
-        }
-        activePet.destroy();
-        activePet = null;
+function toggleDesktopPet(character = 'reimu') {
+    const existingIdx = activePets.findIndex(p => p.character === character);
+    if (existingIdx !== -1) {
+        activePets[existingIdx].destroy();
+        activePets.splice(existingIdx, 1);
     } else {
-        activePet = new Shimeji();
+        const newPet = new Shimeji(character);
+        activePets.push(newPet);
+    }
+
+    if (activePets.length > 0 && !petAnimationId) {
         petLoop();
     }
 }
@@ -2877,111 +2930,240 @@ if (spritesImage.complete) {
     spritesImageLoaded = true;
 }
 
-const idleFrames = [];
-const numIdleFrames = 5;
-let idleFramesLoadedCount = 0;
-for (let i = 0; i < numIdleFrames; i++) {
+const PET_FRAMES = {
+    reimu: {
+        idle: [],
+        walk: [],
+        fall: [],
+        sit: []
+    },
+    marisa: {
+        idle: [],
+        walk: [],
+        fall: [],
+        sit: []
+    },
+    cirno: {
+        idle: [],
+        walk: [],
+        fall: [],
+        animation: []
+    }
+};
+
+// Load Reimu High-Res Frames
+for (let i = 0; i < 5; i++) {
     const img = new Image();
     img.src = `reimu_idle_${i}.png`;
-    img.onload = () => {
-        idleFramesLoadedCount++;
-    };
-    if (img.complete) {
-        idleFramesLoadedCount++;
-    }
-    idleFrames.push(img);
+    PET_FRAMES.reimu.idle.push(img);
 }
-
-const walkFrames = [];
-const numWalkFrames = 8;
-let walkFramesLoadedCount = 0;
-for (let i = 0; i < numWalkFrames; i++) {
+for (let i = 0; i < 8; i++) {
     const img = new Image();
     img.src = `reimu_walk_${i}.png`;
-    img.onload = () => {
-        walkFramesLoadedCount++;
-    };
-    if (img.complete) {
-        walkFramesLoadedCount++;
-    }
-    walkFrames.push(img);
+    PET_FRAMES.reimu.walk.push(img);
 }
-
-const fallFrames = [];
-const numFallFrames = 1;
-let fallFramesLoadedCount = 0;
-for (let i = 0; i < numFallFrames; i++) {
+for (let i = 0; i < 1; i++) {
     const img = new Image();
     img.src = `reimu_fall_${i}.png`;
-    img.onload = () => {
-        fallFramesLoadedCount++;
-    };
-    if (img.complete) {
-        fallFramesLoadedCount++;
-    }
-    fallFrames.push(img);
+    PET_FRAMES.reimu.fall.push(img);
 }
-
-const sitFrames = [];
-const numSitFrames = 9;
-let sitFramesLoadedCount = 0;
-for (let i = 0; i < numSitFrames; i++) {
+for (let i = 0; i < 9; i++) {
     const img = new Image();
     img.src = `reimu_sit_${i}.png`;
-    img.onload = () => {
-        sitFramesLoadedCount++;
-    };
-    if (img.complete) {
-        sitFramesLoadedCount++;
-    }
-    sitFrames.push(img);
+    PET_FRAMES.reimu.sit.push(img);
 }
 
-const SPRITE_MAP = {
-    idle: [
-        { type: 'highres', index: 0 },
-        { type: 'highres', index: 1 },
-        { type: 'highres', index: 2 },
-        { type: 'highres', index: 3 },
-        { type: 'highres', index: 4 }
-    ],
-    walk: [
-        { type: 'highres_walk', index: 0 },
-        { type: 'highres_walk', index: 1 },
-        { type: 'highres_walk', index: 2 },
-        { type: 'highres_walk', index: 3 },
-        { type: 'highres_walk', index: 4 },
-        { type: 'highres_walk', index: 5 },
-        { type: 'highres_walk', index: 6 },
-        { type: 'highres_walk', index: 7 }
-    ],
-    sit: [
-        { type: 'highres_sit', index: 0 },
-        { type: 'highres_sit', index: 1 },
-        // Loop 1 (2 to 7 are seated/grounded)
-        { type: 'highres_sit', index: 2 },
-        { type: 'highres_sit', index: 3 },
-        { type: 'highres_sit', index: 4 },
-        { type: 'highres_sit', index: 5 },
-        { type: 'highres_sit', index: 6 },
-        { type: 'highres_sit', index: 7 },
-        // Loop 2 (to extend sit duration)
-        { type: 'highres_sit', index: 2 },
-        { type: 'highres_sit', index: 3 },
-        { type: 'highres_sit', index: 4 },
-        { type: 'highres_sit', index: 5 },
-        { type: 'highres_sit', index: 6 },
-        { type: 'highres_sit', index: 7 }
-    ],
-    climb: [
-        { r: 4, c: 1 },
-        { r: 4, c: 2 }
-    ],
-    fall: [
-        { type: 'highres_fall', index: 0 }
-    ],
-    drag: [
-        { type: 'highres_fall', index: 0 }
-    ]
+// Load Marisa High-Res Frames
+for (let i = 0; i < 10; i++) {
+    const img = new Image();
+    img.src = `marisa_idle_${i}.png`;
+    PET_FRAMES.marisa.idle.push(img);
+}
+for (let i = 0; i < 8; i++) {
+    const img = new Image();
+    img.src = `marisa_walk_${i}.png`;
+    PET_FRAMES.marisa.walk.push(img);
+}
+for (let i = 0; i < 1; i++) {
+    const img = new Image();
+    img.src = `marisa_fall_${i}.png`;
+    PET_FRAMES.marisa.fall.push(img);
+}
+for (let i = 0; i < 11; i++) {
+    const img = new Image();
+    img.src = `marisa_sit_${i}.png`;
+    PET_FRAMES.marisa.sit.push(img);
+}
+
+// Load Cirno High-Res Frames
+for (let i = 0; i < 6; i++) {
+    const img = new Image();
+    img.src = `cirno_idle_${i}.png`;
+    PET_FRAMES.cirno.idle.push(img);
+}
+for (let i = 0; i < 4; i++) {
+    const img = new Image();
+    img.src = `cirno_walk_${i}.png`;
+    PET_FRAMES.cirno.walk.push(img);
+}
+for (let i = 0; i < 1; i++) {
+    const img = new Image();
+    img.src = `cirno_fall_${i}.png`;
+    PET_FRAMES.cirno.fall.push(img);
+}
+for (let i = 0; i < 16; i++) {
+    const img = new Image();
+    img.src = `cirno_animation_${i}.png`;
+    PET_FRAMES.cirno.animation.push(img);
+}
+
+const PET_SPRITE_MAPS = {
+    cirno: {
+        idle: [
+            { type: 'highres', index: 0 },
+            { type: 'highres', index: 1 },
+            { type: 'highres', index: 2 },
+            { type: 'highres', index: 3 },
+            { type: 'highres', index: 4 },
+            { type: 'highres', index: 5 }
+        ],
+        walk: [
+            { type: 'highres_walk', index: 0 },
+            { type: 'highres_walk', index: 1 },
+            { type: 'highres_walk', index: 2 },
+            { type: 'highres_walk', index: 3 }
+        ],
+        animation: [
+            { type: 'highres_animation', index: 0 },
+            { type: 'highres_animation', index: 1 },
+            { type: 'highres_animation', index: 2 },
+            { type: 'highres_animation', index: 3 },
+            { type: 'highres_animation', index: 4 },
+            { type: 'highres_animation', index: 5 },
+            { type: 'highres_animation', index: 6 },
+            { type: 'highres_animation', index: 7 },
+            { type: 'highres_animation', index: 8 },
+            { type: 'highres_animation', index: 9 },
+            { type: 'highres_animation', index: 10 },
+            { type: 'highres_animation', index: 11 },
+            { type: 'highres_animation', index: 12 },
+            { type: 'highres_animation', index: 13 },
+            { type: 'highres_animation', index: 14 },
+            { type: 'highres_animation', index: 15 }
+        ],
+        climb: [
+            { r: 4, c: 1 },
+            { r: 4, c: 2 }
+        ],
+        fall: [
+            { type: 'highres_fall', index: 0 }
+        ],
+        drag: [
+            { type: 'highres_fall', index: 0 }
+        ]
+    },
+    reimu: {
+        idle: [
+            { type: 'highres', index: 0 },
+            { type: 'highres', index: 1 },
+            { type: 'highres', index: 2 },
+            { type: 'highres', index: 3 },
+            { type: 'highres', index: 4 }
+        ],
+        walk: [
+            { type: 'highres_walk', index: 0 },
+            { type: 'highres_walk', index: 1 },
+            { type: 'highres_walk', index: 2 },
+            { type: 'highres_walk', index: 3 },
+            { type: 'highres_walk', index: 4 },
+            { type: 'highres_walk', index: 5 },
+            { type: 'highres_walk', index: 6 },
+            { type: 'highres_walk', index: 7 }
+        ],
+        sit: [
+            { type: 'highres_sit', index: 0 },
+            { type: 'highres_sit', index: 1 },
+            // Loop 1 (2 to 7 are seated/grounded)
+            { type: 'highres_sit', index: 2 },
+            { type: 'highres_sit', index: 3 },
+            { type: 'highres_sit', index: 4 },
+            { type: 'highres_sit', index: 5 },
+            { type: 'highres_sit', index: 6 },
+            { type: 'highres_sit', index: 7 },
+            // Loop 2 (to extend sit duration)
+            { type: 'highres_sit', index: 2 },
+            { type: 'highres_sit', index: 3 },
+            { type: 'highres_sit', index: 4 },
+            { type: 'highres_sit', index: 5 },
+            { type: 'highres_sit', index: 6 },
+            { type: 'highres_sit', index: 7 }
+        ],
+        climb: [
+            { r: 4, c: 1 },
+            { r: 4, c: 2 }
+        ],
+        fall: [
+            { type: 'highres_fall', index: 0 }
+        ],
+        drag: [
+            { type: 'highres_fall', index: 0 }
+        ]
+    },
+    marisa: {
+        idle: [
+            { type: 'highres', index: 0 },
+            { type: 'highres', index: 1 },
+            { type: 'highres', index: 2 },
+            { type: 'highres', index: 3 },
+            { type: 'highres', index: 4 },
+            { type: 'highres', index: 5 },
+            { type: 'highres', index: 6 },
+            { type: 'highres', index: 7 },
+            { type: 'highres', index: 8 },
+            { type: 'highres', index: 9 }
+        ],
+        walk: [
+            { type: 'highres_walk', index: 0 },
+            { type: 'highres_walk', index: 1 },
+            { type: 'highres_walk', index: 2 },
+            { type: 'highres_walk', index: 3 },
+            { type: 'highres_walk', index: 4 },
+            { type: 'highres_walk', index: 5 },
+            { type: 'highres_walk', index: 6 },
+            { type: 'highres_walk', index: 7 }
+        ],
+        sit: [
+            { type: 'highres_sit', index: 0 },
+            { type: 'highres_sit', index: 1 },
+            // Loop 1 (2 to 9 are seated/grounded)
+            { type: 'highres_sit', index: 2 },
+            { type: 'highres_sit', index: 3 },
+            { type: 'highres_sit', index: 4 },
+            { type: 'highres_sit', index: 5 },
+            { type: 'highres_sit', index: 6 },
+            { type: 'highres_sit', index: 7 },
+            { type: 'highres_sit', index: 8 },
+            { type: 'highres_sit', index: 9 },
+            // Loop 2 (to extend sit duration)
+            { type: 'highres_sit', index: 2 },
+            { type: 'highres_sit', index: 3 },
+            { type: 'highres_sit', index: 4 },
+            { type: 'highres_sit', index: 5 },
+            { type: 'highres_sit', index: 6 },
+            { type: 'highres_sit', index: 7 },
+            { type: 'highres_sit', index: 8 },
+            { type: 'highres_sit', index: 9 }
+        ],
+        climb: [
+            { r: 4, c: 1 },
+            { r: 4, c: 2 }
+        ],
+        fall: [
+            { type: 'highres_fall', index: 0 }
+        ],
+        drag: [
+            { type: 'highres_fall', index: 0 }
+        ]
+    }
 };
 
