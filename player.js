@@ -710,6 +710,15 @@ async function loadSongs() {
         });
 
         renderPlaylist();
+        
+        // Restore last played song and time if available
+        const savedUrl = localStorage.getItem('xp_player_saved_song_url');
+        if (savedUrl) {
+            const idx = filteredSongs.findIndex(s => s.url === savedUrl);
+            if (idx !== -1) {
+                restoreSongAtIndex(idx);
+            }
+        }
     } catch (err) {
         console.error(err);
         tracksContainer.innerHTML = `<div class="loading-label" style="color:red;">${i18n[currentLang].status_error}: ${err.message}</div>`;
@@ -1036,6 +1045,9 @@ function setupPlayerEventListeners() {
             
             timeCurrent.textContent = formatTime(current);
             timeDuration.textContent = formatTime(duration);
+            
+            // Save time periodically
+            localStorage.setItem('xp_player_saved_time', current.toString());
         }
     });
 
@@ -1199,6 +1211,8 @@ function playSongAtIndex(index) {
 
     audioEl.src = song.url;
     audioEl.load();
+    
+    localStorage.setItem('xp_player_saved_song_url', song.url);
 
     if (!audioSource) {
         initAudio();
@@ -1213,6 +1227,45 @@ function playSongAtIndex(index) {
         playerStatus.textContent = i18n[currentLang].status_error;
     });
 
+    updateDSP();
+}
+
+function restoreSongAtIndex(index) {
+    if (index < 0 || index >= filteredSongs.length) return;
+    
+    currentSongIndex = index;
+    const song = filteredSongs[currentSongIndex];
+    
+    document.querySelectorAll('.track-item').forEach((item, idx) => {
+        if (idx === index) {
+            item.classList.add('active');
+            item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        } else {
+            item.classList.remove('active');
+        }
+    });
+
+    currentTitle.textContent = song.title;
+    currentGame.textContent = song.game;
+    currentYear.textContent = `${i18n[currentLang].year_label}${song.year}`;
+    playerStatus.textContent = i18n[currentLang].status_ready;
+
+    audioEl.src = song.url;
+    audioEl.load();
+
+    const savedTime = parseFloat(localStorage.getItem('xp_player_saved_time') || '0');
+    if (savedTime > 0) {
+        const setTimeHandler = () => {
+            audioEl.currentTime = savedTime;
+            if (song.duration > 0) {
+                seekSlider.value = (savedTime / song.duration) * 100;
+            }
+            timeCurrent.textContent = formatTime(savedTime);
+            audioEl.removeEventListener('loadedmetadata', setTimeHandler);
+        };
+        audioEl.addEventListener('loadedmetadata', setTimeHandler);
+    }
+    
     updateDSP();
 }
 
@@ -1238,6 +1291,7 @@ function stopSong() {
     seekSlider.value = 0;
     timeCurrent.textContent = "0:00";
     playerStatus.textContent = i18n[currentLang].status_ready;
+    localStorage.setItem('xp_player_saved_time', '0');
 }
 
 function nextSong() {
