@@ -16,6 +16,9 @@ let isShuffle = false;
 let isRepeat = false;
 let startupPlayed = false;
 
+// Language state
+let currentLang = localStorage.getItem('touhou_lang') || 'en';
+
 // Favorites persistent storage
 let favorites = new Set(JSON.parse(localStorage.getItem('touhou_favorites') || '[]'));
 
@@ -50,6 +53,252 @@ let analyserNode = null;
 // Visualizer State
 let visualizerMode = 'bars'; // 'bars' or 'wave'
 let animationId = null;
+
+// TRANSLATION DICTIONARY
+const i18n = {
+    en: {
+        desktop_player: "Touhou Media Player",
+        desktop_mycomputer: "My Computer",
+        desktop_recycle: "Recycle Bin",
+        player_titlebar: "Touhou Media Player - Windows XP Edition",
+        menu_file: "File",
+        menu_open: "Open local file...",
+        menu_exit: "Exit",
+        menu_view: "View",
+        menu_vis: "✓ Visualizer",
+        menu_filters: "✓ Audio Filters",
+        menu_playlist: "✓ Playlist",
+        menu_playback: "Playback",
+        menu_play_pause: "Play / Pause",
+        menu_stop: "Stop",
+        menu_prev: "Previous",
+        menu_next: "Next",
+        menu_shuffle: "Shuffle:",
+        menu_repeat: "Repeat:",
+        menu_help: "Help",
+        menu_about: "About Touhou XP Player...",
+        filters_title: "Audio Filters (DSP)",
+        filters_bypass: "Bypass All Filters",
+        filters_pitch: "Pitch & Speed",
+        filters_lowpass: "Lowpass Filter (Underwater)",
+        filters_lowpass_desc: "Attenuates high frequencies",
+        filters_highpass: "Highpass Filter (Old Radio)",
+        filters_highpass_desc: "Attenuates low frequencies",
+        filters_delay: "Echo / Delay",
+        filters_delay_time: "Time:",
+        filters_delay_fb: "Feedback:",
+        filters_dist: "Distortion / Overdrive",
+        filters_dist_desc: "Adds analog saturation",
+        filters_reverb: "Reverb (Cathedral / Hall)",
+        filters_reverb_desc: "Simulates acoustic space",
+        vis_spectrum: "Spectrum",
+        vis_oscilloscope: "Oscilloscope",
+        start_text: "start",
+        taskbar_player: "Touhou Media Player",
+        taskbar_readme: "Readme.txt - Note...",
+        start_username: "Gensokyo Administrator",
+        start_player_desc: "Music player",
+        start_readme_desc: "Notepad (Help)",
+        start_quick_filter: "Quick game filter:",
+        start_documents: "My Documents",
+        start_recent_music: "My Recent Music",
+        start_control_panel: "Control Panel",
+        start_help_support: "Help and Support",
+        start_search_internet: "Search Internet",
+        error_title: "System Message",
+        error_btn: "OK",
+        notepad_menu_file: "File",
+        notepad_menu_edit: "Edit",
+        notepad_menu_format: "Format",
+        notepad_menu_help: "Help",
+        notepad_title: "Readme.txt - Notepad",
+        start_logoff: "Log Off",
+        start_shutdown: "Shut Down",
+        on: "ON",
+        off: "OFF",
+        lang_toggle_tooltip: "Toggle Language (English / Español)",
+        btn_play: "Play",
+        btn_pause: "Pause",
+        btn_stop: "Stop",
+        btn_prev: "Previous",
+        btn_next: "Next",
+        btn_mute: "Mute",
+        btn_unmute: "Unmute",
+        
+        // Dynamic labels & alerts
+        no_song_selected: "No song selected",
+        select_track: "Select a track from the list",
+        year_label: "Year: ",
+        loading_songs: "Loading songs...",
+        no_songs_found: "No songs found",
+        songs_suffix: "songs",
+        search_placeholder: "Search song...",
+        all_series: "All Series",
+        my_favorites: "★ My Favorites",
+        status_ready: "Ready",
+        status_playing: "Playing...",
+        status_paused: "Paused",
+        status_loading: "Loading...",
+        status_error: "Playback Error",
+        alert_documents: "Exploring My Computer - Music folder is empty.",
+        alert_control_panel: "Opening Audio Control Panel...",
+        alert_logoff: "Logging off...",
+        confirm_shutdown: "Are you sure you want to shut down this virtual Gensokyo PC?",
+        shutdown_text: "It is now safe to turn off your computer.",
+        btn_restart: "Restart PC",
+        recycle_empty: "The Recycle Bin is empty. There are no deleted files to restore.",
+        computer_denied: "Access denied to My Computer: you do not have Gensokyo Server Administrator privileges.",
+        volume_title: "Volume",
+        
+        // Notepad readme
+        readme_content: `=== TOUHOU BGM PLAYER (Windows XP Edition) ===
+
+Welcome to the Touhou Project music player!
+
+This player combines the visual nostalgia of the classic Windows XP operating system (Windows Media Player style) with modern web audio processing technologies.
+
+FEATURES:
+---------
+1. EXTENSIVE LIBRARY: Over 200 official Touhou tracks, from Touhou 6 (Embodiment of Scarlet Devil) to Touhou 17 (Wily Beast and Weakest Creature), including special Bad Apple!! arrangements.
+2. REAL-TIME AUDIO FILTERS (DSP):
+   - Pitch & Speed: Adjust tempo and pitch dynamically.
+   - Lowpass: Moggles treble frequencies for an underwater effect.
+   - Highpass: Filters out bass for a tinny, old AM radio sound.
+   - Echo / Delay: Creates repeating feedback echoes.
+   - Distortion / Overdrive: Adds warmth and analog clipping.
+   - Reverb: Simulates the 3D acoustics of massive spaces or cathedrals.
+3. DYNAMIC VISUALIZER: Real-time Canvas spectrum analyzer or oscilloscope waveforms.
+4. INTERACTIVE INTERFACE: Windows are draggable, maximizable, and can be minimized to the taskbar.
+
+LEGAL INFORMATION:
+------------------
+- Touhou Project music and characters belong to Team Shanghai Alice / ZUN.
+- Audio tracks are compiled from community-hosted, CORS-enabled Archive.org collections.
+
+Enjoy your musical journey through Gensokyo!`
+    },
+    es: {
+        desktop_player: "Touhou Media Player",
+        desktop_mycomputer: "Mi PC",
+        desktop_recycle: "Papelera",
+        player_titlebar: "Touhou Media Player - Edición Windows XP",
+        menu_file: "Archivo",
+        menu_open: "Abrir archivo local...",
+        menu_exit: "Salir",
+        menu_view: "Ver",
+        menu_vis: "✓ Visualizador",
+        menu_filters: "✓ Filtros de Audio",
+        menu_playlist: "✓ Lista de Reproducción",
+        menu_playback: "Reproducción",
+        menu_play_pause: "Reproducir / Pausar",
+        menu_stop: "Detener",
+        menu_prev: "Anterior",
+        menu_next: "Siguiente",
+        menu_shuffle: "Aleatorio:",
+        menu_repeat: "Repetir:",
+        menu_help: "Ayuda",
+        menu_about: "Acerca de Touhou XP Player...",
+        filters_title: "Filtros de Audio (DSP)",
+        filters_bypass: "Desactivar Todos los Filtros",
+        filters_pitch: "Tono y Velocidad",
+        filters_lowpass: "Filtro Pasa-Bajos (Subacuático)",
+        filters_lowpass_desc: "Atenúa frecuencias agudas",
+        filters_highpass: "Filtro Pasa-Altos (Radio Antigua)",
+        filters_highpass_desc: "Atenúa frecuencias graves",
+        filters_delay: "Eco / Delay",
+        filters_delay_time: "Tiempo:",
+        filters_delay_fb: "Retroalimentación:",
+        filters_dist: "Distorsión / Overdrive",
+        filters_dist_desc: "Añade saturación analógica",
+        filters_reverb: "Reverberación (Catedral / Hall)",
+        filters_reverb_desc: "Simula espacialidad acústica",
+        vis_spectrum: "Espectro",
+        vis_oscilloscope: "Osciloscopio",
+        start_text: "inicio",
+        taskbar_player: "Touhou Media Player",
+        taskbar_readme: "Readme.txt - Bloc...",
+        start_username: "Administrador de Gensokyo",
+        start_player_desc: "Reproductor de música",
+        start_readme_desc: "Bloc de notas (Ayuda)",
+        start_quick_filter: "Filtro rápido por juego:",
+        start_documents: "Mis documentos",
+        start_recent_music: "Mi música reciente",
+        start_control_panel: "Panel de control",
+        start_help_support: "Ayuda y soporte",
+        start_search_internet: "Buscar en internet",
+        error_title: "Mensaje del Sistema",
+        error_btn: "Aceptar",
+        notepad_menu_file: "Archivo",
+        notepad_menu_edit: "Edición",
+        notepad_menu_format: "Formato",
+        notepad_menu_help: "Ayuda",
+        notepad_title: "Readme.txt - Bloc de notas",
+        start_logoff: "Cerrar sesión",
+        start_shutdown: "Apagar",
+        on: "SÍ",
+        off: "NO",
+        lang_toggle_tooltip: "Cambiar idioma (Español / English)",
+        btn_play: "Reproducir",
+        btn_pause: "Pausar",
+        btn_stop: "Detener",
+        btn_prev: "Anterior",
+        btn_next: "Siguiente",
+        btn_mute: "Silenciar",
+        btn_unmute: "Activar sonido",
+        
+        // Dynamic labels & alerts
+        no_song_selected: "Ninguna canción seleccionada",
+        select_track: "Selecciona una pista de la lista",
+        year_label: "Año: ",
+        loading_songs: "Cargando canciones...",
+        no_songs_found: "No se encontraron canciones",
+        songs_suffix: "canciones",
+        search_placeholder: "Buscar canción...",
+        all_series: "Todas las sagas",
+        my_favorites: "★ Mis Favoritos",
+        status_ready: "Listo",
+        status_playing: "Reproduciendo...",
+        status_paused: "Pausado",
+        status_loading: "Cargando...",
+        status_error: "Error de reproducción",
+        alert_documents: "Explorando Mi PC - Carpeta de música vacía.",
+        alert_control_panel: "Abriendo Panel de Control de Audio...",
+        alert_logoff: "Cerrando sesión...",
+        confirm_shutdown: "¿Estás seguro de que quieres apagar este PC de Gensokyo virtual?",
+        shutdown_text: "Ahora puede apagar su equipo con seguridad.",
+        btn_restart: "Reiniciar PC",
+        recycle_empty: "La Papelera de reciclaje está vacía. No hay archivos eliminados para restaurar.",
+        computer_denied: "Acceso denegado a Mi PC: no tienes privilegios de Administrador del Servidor de Gensokyo.",
+        volume_title: "Volumen",
+
+        // Notepad readme
+        readme_content: `=== TOUHOU BGM PLAYER (Edición Windows XP) ===
+
+¡Bienvenido al reproductor de música de la saga de videojuegos Touhou Project!
+
+Este reproductor combina la nostalgia visual del clásico sistema operativo Windows XP (estilo Windows Media Player) con tecnologías modernas de procesamiento de audio web.
+
+CARACTERÍSTICAS:
+----------------
+1. BIBLIOTECA EXTENSA: Más de 200 canciones oficiales de Touhou, desde Touhou 6 (Embodiment of Scarlet Devil) hasta Touhou 17 (Wily Beast and Weakest Creature), incluyendo arreglos especiales de Bad Apple!!.
+2. FILTROS DE AUDIO DIGITAL (DSP) EN TIEMPO REAL:
+   - Tono y Velocidad: Aumenta o disminuye el tempo e infiere efectos agudos/graves.
+   - Pasa-Bajos: Genera un ambiente subacuático amortiguando las frecuencias agudas.
+   - Pasa-Altos: Emula el sonido estridente de una radio AM antigua.
+   - Eco / Delay: Genera reflexiones de sonido repetitivas con retroalimentación ajustable.
+   - Distorsión / Overdrive: Añade calidez analógica y clipping de onda.
+   - Reverberación: Simula la acústica tridimensional de salas gigantes o catedrales.
+3. VISUALIZADOR DINÁMICO: Renderizado nativo por Canvas en modo "Espectro" o modo "Osciloscopio".
+4. INTERFAZ INTERACTIVA: Las ventanas de este escritorio de XP son arrastrables, maximizables, y se pueden minimizar a la barra de tareas.
+
+INFORMACIÓN LEGAL:
+------------------
+- La música de Touhou Project y los personajes pertenecen a Team Shanghai Alice / ZUN.
+- Las pistas de audio son provistas por la comunidad y recopiladas mediante archivos directos de Internet Archive que permiten CORS.
+
+¡Disfruta del viaje musical por Gensokyo!`
+    }
+};
 
 // DOM Elements
 const audioEl = document.getElementById('main-audio');
@@ -100,6 +349,9 @@ window.addEventListener('DOMContentLoaded', () => {
     volumeSlider.value = savedVolume * 100;
     updateVolumeIcon(savedVolume);
 
+    // Apply active language configuration
+    updateLanguageUI();
+
     // Focus window player by default
     focusWindow(document.getElementById('window-player'));
 });
@@ -113,6 +365,8 @@ function updateClock() {
     hours = hours % 12;
     hours = hours ? hours : 12; // 12 instead of 0
     minutes = minutes < 10 ? '0' + minutes : minutes;
+    
+    // XP tray clock display
     trayClock.textContent = `${hours}:${minutes} ${ampm}`;
 }
 
@@ -263,6 +517,105 @@ function toggleMinimizeFromTaskbar(id) {
     }
 }
 
+// LANGUAGE TRANSLATION SWITCHER
+function toggleLanguage() {
+    currentLang = currentLang === 'en' ? 'es' : 'en';
+    localStorage.setItem('touhou_lang', currentLang);
+    updateLanguageUI();
+}
+
+function updateLanguageUI() {
+    // 1. Translate statically configured elements with data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[currentLang][key]) {
+            // Special handling for the start button to preserve the flag SVG child
+            if (key === 'start_text') {
+                const flag = el.querySelector('.start-flag');
+                el.textContent = i18n[currentLang][key];
+                if (flag) el.prepend(flag);
+            } else {
+                el.textContent = i18n[currentLang][key];
+            }
+        }
+    });
+
+    // 2. Update the language bar tray indicator
+    const trayLang = document.getElementById('tray-lang');
+    if (trayLang) {
+        trayLang.textContent = currentLang.toUpperCase();
+        trayLang.title = i18n[currentLang].lang_toggle_tooltip;
+    }
+
+    // 3. Update dynamic input placeholders
+    searchInput.placeholder = i18n[currentLang].search_placeholder;
+
+    // 4. Update Notepad contents
+    document.getElementById('notepad-text').value = i18n[currentLang].readme_content;
+
+    // 5. Update fallback song metadata labels
+    if (currentSongIndex === -1) {
+        currentTitle.textContent = i18n[currentLang].no_song_selected;
+        currentGame.textContent = i18n[currentLang].select_track;
+        currentYear.textContent = "-";
+    } else {
+        const song = filteredSongs[currentSongIndex];
+        currentYear.textContent = `${i18n[currentLang].year_label}${song.year}`;
+    }
+
+    // 6. Update current status text
+    if (isPlaying) {
+        playerStatus.textContent = i18n[currentLang].status_playing;
+    } else if (playerStatus.textContent === "Listo" || playerStatus.textContent === "Ready") {
+        playerStatus.textContent = i18n[currentLang].status_ready;
+    } else if (playerStatus.textContent === "Pausado" || playerStatus.textContent === "Paused") {
+        playerStatus.textContent = i18n[currentLang].status_paused;
+    } else if (playerStatus.textContent === "Cargando..." || playerStatus.textContent === "Loading...") {
+        playerStatus.textContent = i18n[currentLang].status_loading;
+    } else if (playerStatus.textContent === "Error de reproducción" || playerStatus.textContent === "Playback Error") {
+        playerStatus.textContent = i18n[currentLang].status_error;
+    }
+
+    // 6.5. Update button titles (tooltips)
+    document.getElementById('btn-prev').title = i18n[currentLang].btn_prev;
+    document.getElementById('btn-next').title = i18n[currentLang].btn_next;
+    document.getElementById('btn-stop').title = i18n[currentLang].btn_stop;
+    playBtn.title = isPlaying ? i18n[currentLang].btn_pause : i18n[currentLang].btn_play;
+    muteBtn.title = isMuted ? i18n[currentLang].btn_unmute : i18n[currentLang].btn_mute;
+
+    // 6.6. Update shuffle/repeat status labels
+    const shuffleInd = document.getElementById('shuffle-indicator');
+    if (shuffleInd) {
+        shuffleInd.textContent = isShuffle ? i18n[currentLang].on : i18n[currentLang].off;
+    }
+    const repeatInd = document.getElementById('repeat-indicator');
+    if (repeatInd) {
+        repeatInd.textContent = isRepeat ? i18n[currentLang].on : i18n[currentLang].off;
+    }
+
+    // 7. Update playlist game filter select dropdown
+    if (songs.length > 0) {
+        const prevFilterVal = filterSelect.value;
+        const games = [...new Set(songs.map(s => s.game))].sort();
+        filterSelect.innerHTML = `
+            <option value="all">${i18n[currentLang].all_series}</option>
+            <option value="favorites">${i18n[currentLang].my_favorites}</option>
+        `;
+        games.forEach(game => {
+            const opt = document.createElement('option');
+            opt.value = game;
+            opt.textContent = game;
+            filterSelect.appendChild(opt);
+        });
+        filterSelect.value = prevFilterVal || 'all';
+    }
+
+    // 8. Re-render playlist to update titles and star button tooltips
+    if (songs.length > 0) {
+        renderPlaylist();
+    }
+}
+
 // PLAYLIST & DATA LOADING
 async function loadSongs() {
     try {
@@ -272,9 +625,12 @@ async function loadSongs() {
         
         filteredSongs = [...songs];
         
-        // Populate game filter select dropdown
+        // Populate game filter select dropdown based on language
         const games = [...new Set(songs.map(s => s.game))].sort();
-        filterSelect.innerHTML = '<option value="all">Todas las sagas</option><option value="favorites">★ Mis Favoritos</option>';
+        filterSelect.innerHTML = `
+            <option value="all">${i18n[currentLang].all_series}</option>
+            <option value="favorites">${i18n[currentLang].my_favorites}</option>
+        `;
         games.forEach(game => {
             const opt = document.createElement('option');
             opt.value = game;
@@ -288,7 +644,6 @@ async function loadSongs() {
         games.forEach(game => {
             const link = document.createElement('div');
             link.className = 'game-link';
-            // Shorten name if too long
             let displayName = game.replace("Touhou ", "TH");
             link.textContent = displayName;
             link.onclick = () => {
@@ -303,7 +658,7 @@ async function loadSongs() {
         renderPlaylist();
     } catch (err) {
         console.error(err);
-        tracksContainer.innerHTML = `<div class="loading-label" style="color:red;">Error al cargar las canciones: ${err.message}</div>`;
+        tracksContainer.innerHTML = `<div class="loading-label" style="color:red;">${i18n[currentLang].status_error}: ${err.message}</div>`;
     }
 }
 
@@ -311,8 +666,8 @@ function renderPlaylist() {
     tracksContainer.innerHTML = '';
     
     if (filteredSongs.length === 0) {
-        tracksContainer.innerHTML = '<div class="loading-label">No se encontraron canciones</div>';
-        songsCount.textContent = '0 canciones';
+        tracksContainer.innerHTML = `<div class="loading-label">${i18n[currentLang].no_songs_found}</div>`;
+        songsCount.textContent = `0 ${i18n[currentLang].songs_suffix}`;
         return;
     }
 
@@ -330,12 +685,14 @@ function renderPlaylist() {
         const durationStr = song.duration > 0 ? `${min}:${sec}` : '--:--';
 
         const isFav = favorites.has(song.id);
+        const tooltipStr = isFav ? i18n[currentLang].my_favorites : ""; // or simple tooltip
+
         trackItem.innerHTML = `
             <div class="track-meta">
                 <span class="track-name">${song.title}</span>
                 <span class="track-sub">${song.game} (${song.year})</span>
             </div>
-            <span class="fav-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">${isFav ? '★' : '☆'}</span>
+            <span class="fav-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove' : 'Favorite'}">${isFav ? '★' : '☆'}</span>
             <span class="track-duration">${durationStr}</span>
         `;
 
@@ -353,7 +710,7 @@ function renderPlaylist() {
         tracksContainer.appendChild(trackItem);
     });
 
-    songsCount.textContent = `${filteredSongs.length} canciones`;
+    songsCount.textContent = `${filteredSongs.length} ${i18n[currentLang].songs_suffix}`;
 }
 
 function toggleFavorite(songId) {
@@ -450,34 +807,22 @@ function initAudio() {
     // Default parameters
     updateDSP();
 
-    // GRAPH ROUTING:
-    // Source -> dryGain -> outGain
-    // Source -> lowpass -> highpass -> distortion -> outGain
-    // (We will use a master bypass switch. If bypassed: Source goes straight to outGain. If not: goes through filters)
-    // Delay/Reverb branch out from the filtered sound or the source sound. Let's run source -> filters -> dryGain / delay / reverb.
-    
     // Connections:
     audioSource.connect(lowpassFilterNode);
     lowpassFilterNode.connect(highpassFilterNode);
     highpassFilterNode.connect(distortionNode);
     
-    // Connect distortion output to dry path
     distortionNode.connect(dryGain);
-    
-    // Connect distortion output to Delay path
     distortionNode.connect(delayNode);
     delayNode.connect(delayMixGain);
     
-    // Connect distortion output to Reverb path
     distortionNode.connect(reverbNode);
     reverbNode.connect(reverbMixGain);
 
-    // Mix dry, delay, reverb into output
     dryGain.connect(outGain);
     delayMixGain.connect(outGain);
     reverbMixGain.connect(outGain);
 
-    // Output goes to Analyser and Speakers
     outGain.connect(analyserNode);
     analyserNode.connect(audioCtx.destination);
 }
@@ -493,7 +838,6 @@ function createImpulseResponseBuffer(context, duration, decay) {
     for (let i = 0; i < length; i++) {
         const percent = i / length;
         const decayEnvelope = Math.pow(1 - percent, decay);
-        // Stereo random noise tail
         left[i] = (Math.random() * 2 - 1) * decayEnvelope;
         right[i] = (Math.random() * 2 - 1) * decayEnvelope;
     }
@@ -520,8 +864,6 @@ function updateDSP() {
     const bypass = document.getElementById('bypass-filters').checked;
 
     if (bypass) {
-        // Completely flatten/bypass DSP
-        // Set filters to neutral
         lowpassFilterNode.frequency.setValueAtTime(22000, audioCtx.currentTime);
         highpassFilterNode.frequency.setValueAtTime(10, audioCtx.currentTime);
         distortionNode.curve = null;
@@ -530,37 +872,32 @@ function updateDSP() {
         reverbMixGain.gain.setValueAtTime(0, audioCtx.currentTime);
         dryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
         
-        // Speed to 1
         audioEl.playbackRate = 1.0;
         document.getElementById('filter-pitch').value = 1.0;
         document.getElementById('pitch-val').textContent = "1.0x";
         return;
     }
 
-    // 1. Pitch / Speed
     const speed = parseFloat(document.getElementById('filter-pitch').value);
     audioEl.playbackRate = speed;
     document.getElementById('pitch-val').textContent = speed.toFixed(2) + "x";
 
-    // 2. Lowpass
     const enableLP = document.getElementById('enable-lowpass').checked;
     const lpVal = parseFloat(document.getElementById('filter-lowpass').value);
     if (enableLP) {
         lowpassFilterNode.frequency.setValueAtTime(lpVal, audioCtx.currentTime);
     } else {
-        lowpassFilterNode.frequency.setValueAtTime(22000, audioCtx.currentTime); // maximum
+        lowpassFilterNode.frequency.setValueAtTime(22000, audioCtx.currentTime);
     }
 
-    // 3. Highpass
     const enableHP = document.getElementById('enable-highpass').checked;
     const hpVal = parseFloat(document.getElementById('filter-highpass').value);
     if (enableHP) {
         highpassFilterNode.frequency.setValueAtTime(hpVal, audioCtx.currentTime);
     } else {
-        highpassFilterNode.frequency.setValueAtTime(10, audioCtx.currentTime); // minimum
+        highpassFilterNode.frequency.setValueAtTime(10, audioCtx.currentTime);
     }
 
-    // 4. Distortion
     const enableDist = document.getElementById('enable-distortion').checked;
     const distAmount = parseFloat(document.getElementById('filter-distortion').value);
     if (enableDist) {
@@ -569,7 +906,6 @@ function updateDSP() {
         distortionNode.curve = null;
     }
 
-    // 5. Echo/Delay
     const enableDelay = document.getElementById('enable-delay').checked;
     const delayTime = parseFloat(document.getElementById('filter-delay-time').value);
     const delayFb = parseFloat(document.getElementById('filter-delay-feedback').value);
@@ -580,21 +916,18 @@ function updateDSP() {
     if (enableDelay) {
         delayNode.delayTime.setValueAtTime(delayTime, audioCtx.currentTime);
         delayFeedbackGain.gain.setValueAtTime(delayFb, audioCtx.currentTime);
-        delayMixGain.gain.setValueAtTime(0.4, audioCtx.currentTime); // wet gain
-        dryGain.gain.setValueAtTime(0.8, audioCtx.currentTime); // slight dry attenuation to prevent clip
+        delayMixGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        dryGain.gain.setValueAtTime(0.8, audioCtx.currentTime);
     } else {
         delayFeedbackGain.gain.setValueAtTime(0, audioCtx.currentTime);
         delayMixGain.gain.setValueAtTime(0, audioCtx.currentTime);
         dryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
     }
 
-    // 6. Reverb
     const enableReverb = document.getElementById('enable-reverb').checked;
     const reverbAmount = parseFloat(document.getElementById('filter-reverb').value);
     if (enableReverb) {
-        // Reverb mix level
         reverbMixGain.gain.setValueAtTime((reverbAmount / 100) * 0.7, audioCtx.currentTime);
-        // reduce dry gain slightly to compensate
         dryGain.gain.setValueAtTime(Math.max(0.3, 1.0 - (reverbAmount / 100) * 0.5), audioCtx.currentTime);
     } else {
         reverbMixGain.gain.setValueAtTime(0, audioCtx.currentTime);
@@ -606,11 +939,8 @@ function updateDSP() {
 
 // SETUP LISTENERS
 function setupPlayerEventListeners() {
-    // Play/Pause
     playBtn.addEventListener('click', togglePlay);
-    // Stop
     stopBtn.addEventListener('click', stopSong);
-    // Next/Prev
     prevBtn.addEventListener('click', prevSong);
     nextBtn.addEventListener('click', nextSong);
 
@@ -618,20 +948,19 @@ function setupPlayerEventListeners() {
     audioEl.addEventListener('play', () => {
         isPlaying = true;
         document.getElementById('window-player').classList.add('playing');
-        playBtn.title = "Pausar";
+        playBtn.title = i18n[currentLang].btn_pause;
         playBtn.innerHTML = `<svg viewBox="0 0 24 24"><rect x='6' y='5' width='4' height='14' fill='currentColor'/><rect x='14' y='5' width='4' height='14' fill='currentColor'/></svg>`;
-        playerStatus.textContent = "Reproduciendo...";
+        playerStatus.textContent = i18n[currentLang].status_playing;
         
-        // Start visualizer animation
         startVisualizer();
     });
 
     audioEl.addEventListener('pause', () => {
         isPlaying = false;
         document.getElementById('window-player').classList.remove('playing');
-        playBtn.title = "Reproducir";
+        playBtn.title = i18n[currentLang].btn_play;
         playBtn.innerHTML = `<svg viewBox="0 0 24 24" id="play-icon"><polygon points='8,5 19,12 8,19' fill='currentColor'/></svg>`;
-        playerStatus.textContent = "Pausado";
+        playerStatus.textContent = i18n[currentLang].status_paused;
     });
 
     audioEl.addEventListener('ended', () => {
@@ -643,14 +972,12 @@ function setupPlayerEventListeners() {
         }
     });
 
-    // Time progress
     audioEl.addEventListener('timeupdate', () => {
         if (!isNaN(audioEl.duration)) {
             const current = audioEl.currentTime;
             const duration = audioEl.duration;
             seekSlider.value = (current / duration) * 100;
             
-            // Text progress
             timeCurrent.textContent = formatTime(current);
             timeDuration.textContent = formatTime(duration);
         }
@@ -663,7 +990,6 @@ function setupPlayerEventListeners() {
         }
     });
 
-    // Seek input
     seekSlider.addEventListener('input', () => {
         if (!isNaN(audioEl.duration)) {
             const seekTo = (seekSlider.value / 100) * audioEl.duration;
@@ -671,36 +997,29 @@ function setupPlayerEventListeners() {
         }
     });
 
-    // Volume input
     volumeSlider.addEventListener('input', () => {
         const val = volumeSlider.value / 100;
         audioEl.volume = val;
-        
-        // save volume to localStorage
         localStorage.setItem('touhou_volume', val);
-        
-        // update mute icons
         updateVolumeIcon(val);
     });
 
-    // Mute button
     muteBtn.addEventListener('click', () => {
         isMuted = !isMuted;
         if (isMuted) {
             previousVolume = audioEl.volume;
             audioEl.volume = 0;
             volumeSlider.value = 0;
-            muteBtn.title = "Activar sonido";
+            muteBtn.title = i18n[currentLang].btn_unmute;
             muteBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d='M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z' fill='currentColor'/></svg>`;
         } else {
             audioEl.volume = previousVolume;
             volumeSlider.value = previousVolume * 100;
-            muteBtn.title = "Silenciar";
+            muteBtn.title = i18n[currentLang].btn_mute;
             updateVolumeIcon(previousVolume);
         }
     });
 
-    // Search and Filter inputs
     searchInput.addEventListener('input', filterPlaylist);
     filterSelect.addEventListener('change', filterPlaylist);
     document.getElementById('search-clear').addEventListener('click', () => {
@@ -708,19 +1027,17 @@ function setupPlayerEventListeners() {
         filterPlaylist();
     });
 
-    // Local file input helper
     document.getElementById('file-input').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             const fileUrl = URL.createObjectURL(file);
             
-            // Add custom local song item
             const localSong = {
                 id: `local_${Date.now()}`,
-                game: "Archivo local",
-                year: "Nuevo",
+                game: currentLang === 'en' ? "Local file" : "Archivo local",
+                year: currentLang === 'en' ? "New" : "Nuevo",
                 title: file.name.replace(/\.[^/.]+$/, ""),
-                duration: 0, // dynamic
+                duration: 0,
                 url: fileUrl,
                 filename: file.name
             };
@@ -729,9 +1046,19 @@ function setupPlayerEventListeners() {
             filteredSongs = [...songs];
             renderPlaylist();
             
-            // Play it immediately
             playSongAtIndex(0);
         }
+    });
+
+    // Start Menu Right Column Actions (Localized)
+    document.getElementById('start-documents-btn').addEventListener('click', () => {
+        alert(i18n[currentLang].alert_documents);
+    });
+    document.getElementById('start-control-btn').addEventListener('click', () => {
+        alert(i18n[currentLang].alert_control_panel);
+    });
+    document.getElementById('btn-logoff').addEventListener('click', () => {
+        alert(i18n[currentLang].alert_logoff);
     });
 }
 
@@ -773,13 +1100,10 @@ function setupFilters() {
         'filter-reverb'
     ];
 
-    // Trigger update on bypass click
     bypassCheckbox.addEventListener('change', updateDSP);
 
-    // Trigger updates on checkboxes/sliders changes
     checkboxes.forEach(id => {
         document.getElementById(id).addEventListener('change', () => {
-            // Uncheck bypass when user manually interacts with filters
             if (document.getElementById(id).checked) {
                 bypassCheckbox.checked = false;
             }
@@ -802,7 +1126,6 @@ function playSongAtIndex(index) {
     currentSongIndex = index;
     const song = filteredSongs[currentSongIndex];
     
-    // Highlight in playlist
     document.querySelectorAll('.track-item').forEach((item, idx) => {
         if (idx === index) {
             item.classList.add('active');
@@ -812,38 +1135,33 @@ function playSongAtIndex(index) {
         }
     });
 
-    // Update metadata labels
+    // Update metadata labels using dynamic prefix
     currentTitle.textContent = song.title;
     currentGame.textContent = song.game;
-    currentYear.textContent = `Año: ${song.year}`;
-    playerStatus.textContent = "Cargando...";
+    currentYear.textContent = `${i18n[currentLang].year_label}${song.year}`;
+    playerStatus.textContent = i18n[currentLang].status_loading;
 
-    // Load and play audio
     audioEl.src = song.url;
     audioEl.load();
 
-    // First time initializing Audio Context on user play action
     if (!audioCtx) {
         initAudio();
     }
     
-    // Resume audio context if suspended (browser autoplay policy restriction)
     if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
 
     audioEl.play().catch(err => {
-        console.warn("Reproducción abortada: requiere interacción", err);
-        playerStatus.textContent = "Error de reproducción";
+        console.warn("Reproducción abortada:", err);
+        playerStatus.textContent = i18n[currentLang].status_error;
     });
 
-    // Update DSP nodes configurations
     updateDSP();
 }
 
 function togglePlay() {
     if (currentSongIndex === -1 && filteredSongs.length > 0) {
-        // play first song if none loaded
         playSongAtIndex(0);
         return;
     }
@@ -863,7 +1181,7 @@ function stopSong() {
     audioEl.currentTime = 0;
     seekSlider.value = 0;
     timeCurrent.textContent = "0:00";
-    playerStatus.textContent = "Listo";
+    playerStatus.textContent = i18n[currentLang].status_ready;
 }
 
 function nextSong() {
@@ -875,7 +1193,7 @@ function nextSong() {
     } else {
         nextIndex = currentSongIndex + 1;
         if (nextIndex >= filteredSongs.length) {
-            nextIndex = 0; // loop to beginning
+            nextIndex = 0;
         }
     }
     playSongAtIndex(nextIndex);
@@ -890,7 +1208,7 @@ function prevSong() {
     } else {
         prevIndex = currentSongIndex - 1;
         if (prevIndex < 0) {
-            prevIndex = filteredSongs.length - 1; // loop to end
+            prevIndex = filteredSongs.length - 1;
         }
     }
     playSongAtIndex(prevIndex);
@@ -898,12 +1216,13 @@ function prevSong() {
 
 function toggleShuffle() {
     isShuffle = !isShuffle;
-    document.getElementById('shuffle-indicator').textContent = isShuffle ? 'ON' : 'OFF';
+    document.getElementById('shuffle-indicator').textContent = isShuffle ? i18n[currentLang].on : i18n[currentLang].off;
 }
 
+// Repeat Mode
 function toggleRepeat() {
     isRepeat = !isRepeat;
-    document.getElementById('repeat-indicator').textContent = isRepeat ? 'ON' : 'OFF';
+    document.getElementById('repeat-indicator').textContent = isRepeat ? i18n[currentLang].on : i18n[currentLang].off;
 }
 
 // CANVAS VISUALIZER DRAW LOOP
@@ -916,12 +1235,10 @@ function startVisualizer() {
         const width = canvas.width;
         const height = canvas.height;
         
-        // Clear canvas
         canvasCtx.fillStyle = '#080808';
         canvasCtx.fillRect(0, 0, width, height);
 
         if (!analyserNode || !isPlaying) {
-            // Draw dummy lines when paused or not connected
             canvasCtx.strokeStyle = '#005500';
             canvasCtx.lineWidth = 2;
             canvasCtx.beginPath();
@@ -934,7 +1251,6 @@ function startVisualizer() {
         const bufferLength = analyserNode.frequencyBinCount;
         
         if (visualizerMode === 'bars') {
-            // Bar graph
             const dataArray = new Uint8Array(bufferLength);
             analyserNode.getByteFrequencyData(dataArray);
 
@@ -945,24 +1261,20 @@ function startVisualizer() {
             for (let i = 0; i < bufferLength; i++) {
                 barHeight = (dataArray[i] / 255) * height;
 
-                // Color gradient (green to yellow)
                 const green = 255;
                 const red = Math.min(255, (dataArray[i] / 255) * 350);
                 canvasCtx.fillStyle = `rgb(${red}, ${green}, 0)`;
                 
-                // Draw XP-style segmented vertical bars
                 canvasCtx.fillRect(x, height - barHeight, barWidth - 1, barHeight);
 
                 x += barWidth;
             }
         } else {
-            // Waveform (oscilloscope)
             const dataArray = new Uint8Array(bufferLength);
             analyserNode.getByteTimeDomainData(dataArray);
 
             canvasCtx.lineWidth = 2;
             canvasCtx.strokeStyle = '#00ff00';
-            // Neon Glow effect
             canvasCtx.shadowBlur = 4;
             canvasCtx.shadowColor = '#00ff00';
             
@@ -986,14 +1298,13 @@ function startVisualizer() {
 
             canvasCtx.lineTo(width, height / 2);
             canvasCtx.stroke();
-            canvasCtx.shadowBlur = 0; // reset shadow
+            canvasCtx.shadowBlur = 0;
         }
     }
     
     draw();
 }
 
-// Toggle visualizer mode buttons
 document.getElementById('btn-vis-bars').addEventListener('click', () => {
     visualizerMode = 'bars';
     document.getElementById('btn-vis-bars').classList.add('active');
@@ -1010,9 +1321,7 @@ document.getElementById('btn-vis-wave').addEventListener('click', () => {
 function setupDesktopEvents() {
     const icons = document.querySelectorAll('.desktop-icon');
     
-    // Select desktop icon on click
     desktop.addEventListener('click', (e) => {
-        // Deselect if clicking desktop background
         if (e.target.id === 'desktop') {
             icons.forEach(ico => ico.classList.remove('selected'));
             startMenu.classList.add('hidden');
@@ -1027,37 +1336,33 @@ function setupDesktopEvents() {
             startMenu.classList.add('hidden');
         });
 
-        // Double click actions
         icon.addEventListener('dblclick', () => {
             const targetId = icon.getAttribute('data-target');
             if (targetId) {
                 openWindow(targetId);
             } else {
-                // Show critical system error for My PC or empty Recycle bin
                 playSystemSound(XP_ERROR_URL);
                 if (icon.id === 'icon-recycle') {
-                    showErrorDialog("La Papelera de reciclaje está vacía. No hay archivos eliminados para restaurar.");
+                    showErrorDialog(i18n[currentLang].recycle_empty);
                 } else if (icon.id === 'icon-mycomputer') {
-                    showErrorDialog("Acceso denegado a Mi PC: no tienes privilegios de Administrador del Servidor de Gensokyo.");
+                    showErrorDialog(i18n[currentLang].computer_denied);
                 }
             }
         });
     });
 }
 
-// Start menu trigger
 function toggleStartMenu() {
     startMenu.classList.toggle('hidden');
 }
 
-// Virtual Shutdown effect
 function shutdownVirtualPC() {
-    playSystemSound(XP_ERROR_URL); // plays warning
-    if (confirm("¿Estás seguro de que quieres apagar este PC de Gensokyo virtual?")) {
+    playSystemSound(XP_ERROR_URL);
+    if (confirm(i18n[currentLang].confirm_shutdown)) {
         document.body.innerHTML = `
             <div style="background-color:#000000; width:100vw; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#dedede; font-family:'Courier New', monospace; font-size:14px; text-align:center; padding: 20px;">
-                <p style="margin-bottom: 20px;">Ahora puede apagar su equipo con seguridad.</p>
-                <button onclick="location.reload()" style="background:#222; border:1px solid #777; color:#fff; padding:6px 12px; cursor:pointer;">Reiniciar PC</button>
+                <p style="margin-bottom: 20px;">${i18n[currentLang].shutdown_text}</p>
+                <button onclick="location.reload()" style="background:#222; border:1px solid #777; color:#fff; padding:6px 12px; cursor:pointer;">${i18n[currentLang].btn_restart}</button>
             </div>
         `;
     }
@@ -1065,11 +1370,10 @@ function shutdownVirtualPC() {
 
 // SYSTEM SOUND PLAYER
 function playSystemSound(url) {
-    // We create a temporary audio element so we don't interfere with music playing
     const sysAudio = new Audio(url);
     sysAudio.volume = 0.5;
     sysAudio.play().catch(err => {
-        console.warn("Sonido del sistema bloqueado por el navegador:", err);
+        console.warn("System sound blocked:", err);
     });
 }
 
@@ -1098,13 +1402,12 @@ function toggleSection(id) {
     }
 }
 
-// Play XP Startup Sound on the very first click or keypress on the page (simulates boot-up)
+// Play XP Startup Sound on the very first click or keypress on the page
 function playStartupOnce() {
     if (!startupPlayed) {
         playSystemSound(XP_STARTUP_URL);
         startupPlayed = true;
         
-        // Warm up AudioContext to satisfy browser autoplay restrictions
         if (!audioCtx) {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
             try {
@@ -1112,7 +1415,6 @@ function playStartupOnce() {
             } catch(e) {}
         }
         
-        // Remove event listeners so it only runs once
         document.removeEventListener('click', playStartupOnce);
         document.removeEventListener('keydown', playStartupOnce);
     }
@@ -1120,4 +1422,3 @@ function playStartupOnce() {
 
 document.addEventListener('click', playStartupOnce);
 document.addEventListener('keydown', playStartupOnce);
-
