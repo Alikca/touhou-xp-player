@@ -765,11 +765,13 @@ function filterPlaylist() {
 
 // SETUP AUDIO CONTEXT & DSP NODES
 function initAudio() {
-    if (audioCtx) return; // already initialized
-
     // Create Context
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AudioContextClass();
+    if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+    }
+
+    if (audioSource) return; // already initialized nodes
 
     // Create nodes
     audioSource = audioCtx.createMediaElementSource(audioEl);
@@ -1144,7 +1146,7 @@ function playSongAtIndex(index) {
     audioEl.src = song.url;
     audioEl.load();
 
-    if (!audioCtx) {
+    if (!audioSource) {
         initAudio();
     }
     
