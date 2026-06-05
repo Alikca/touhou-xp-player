@@ -843,9 +843,9 @@ body, html {
 }
 
 .start-flag {
-    width: 14px;
-    height: 14px;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 3l10 2 10-2v12l-10 2-10-2z" fill="white"/></svg>');
+    width: 16px;
+    height: 16px;
+    background-image: url('start-flag.png');
     background-size: contain;
     background-repeat: no-repeat;
 }
