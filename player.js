@@ -136,6 +136,12 @@ const i18n = {
         paint_save: "Save Image...",
         paint_undo: "Undo (Ctrl+Z)",
         paint_clear: "Clear Image",
+        desktop_pet: "Reimu Shimeji",
+        menu_toggle_pet: "Toggle Reimu Pet",
+        desktop_marisa: "Marisa Shimeji",
+        menu_toggle_marisa: "Toggle Marisa Pet",
+        desktop_cirno: "Cirno Shimeji",
+        menu_toggle_cirno: "Toggle Cirno Pet",
         
         // Dynamic labels & alerts
         no_song_selected: "No song selected",
@@ -269,6 +275,12 @@ Enjoy your musical journey through Gensokyo!`
         paint_save: "Guardar imagen...",
         paint_undo: "Deshacer (Ctrl+Z)",
         paint_clear: "Borrar imagen",
+        desktop_pet: "Reimu Shimeji",
+        menu_toggle_pet: "Mascota Reimu",
+        desktop_marisa: "Marisa Shimeji",
+        menu_toggle_marisa: "Mascota Marisa",
+        desktop_cirno: "Cirno Shimeji",
+        menu_toggle_cirno: "Mascota Cirno",
         
         // Dynamic labels & alerts
         no_song_selected: "Ninguna canción seleccionada",
@@ -519,6 +531,20 @@ function closeWindow(id) {
 }
 
 function openWindow(id) {
+    if (id === 'toggle-pet') {
+        toggleDesktopPet();
+        return;
+    }
+    if (id === 'toggle-marisa') {
+        playSystemSound(XP_ERROR_URL);
+        showErrorDialog(currentLang === 'es' ? "Marisa Shimeji no está disponible todavía. ¡La implementaremos pronto!" : "Marisa Shimeji is not available yet. We will implement it soon!");
+        return;
+    }
+    if (id === 'toggle-cirno') {
+        playSystemSound(XP_ERROR_URL);
+        showErrorDialog(currentLang === 'es' ? "Cirno Shimeji no está disponible todavía. ¡La implementaremos pronto!" : "Cirno Shimeji is not available yet. We will implement it soon!");
+        return;
+    }
     const win = document.getElementById(id);
     if (win) {
         win.classList.remove('minimized');
@@ -1912,4 +1938,990 @@ function paintFloodFill(startX, startY, fillHex) {
     }
     paintCtx.putImageData(imgData, 0, 0);
 }
+
+/* ==========================================================================
+   DESKTOP PET (SHIMEJI) IMPLEMENTATION
+   ========================================================================== */
+
+const PET_SPRITES = {
+    idle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+        <!-- Large Red Back Bow -->
+        <path d="M 10 12 L 24 20 L 38 12 L 34 26 L 14 26 Z" fill="#d32f2f"/>
+        <circle cx="24" cy="20" r="3" fill="#b71c1c"/>
+        <!-- Hair (Back) -->
+        <path d="M 16 18 L 32 18 L 34 32 L 14 32 Z" fill="#2c1d11"/>
+        <!-- Hair tubes -->
+        <rect x="13" y="18" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <rect x="31" y="18" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <!-- Side hair locks -->
+        <path d="M 13 24 L 17 32 L 15 32 L 13 24" fill="#2c1d11"/>
+        <path d="M 35 24 L 31 32 L 33 32 L 35 24" fill="#2c1d11"/>
+        <!-- Face -->
+        <circle cx="24" cy="20" r="8" fill="#ffe0b2"/>
+        <!-- Hair Bangs -->
+        <path d="M 16 16 C 18 12, 30 12, 32 16 C 30 14, 18 14, 16 16" fill="#2c1d11"/>
+        <!-- Hair center bangs detail -->
+        <path d="M 22 14 L 24 18 L 26 14 Z" fill="#2c1d11"/>
+        <!-- Eyes -->
+        <ellipse cx="21" cy="20" rx="1" ry="2" fill="#4e342e"/>
+        <ellipse cx="27" cy="20" rx="1" ry="2" fill="#4e342e"/>
+        <!-- Rosy Cheeks -->
+        <circle cx="18.5" cy="22" r="1" fill="#ffab91" opacity="0.8"/>
+        <circle cx="29.5" cy="22" r="1" fill="#ffab91" opacity="0.8"/>
+        <!-- Mouth -->
+        <path d="M 23 23 Q 24 24 25 23" stroke="#4e342e" stroke-width="0.8" fill="none"/>
+        <!-- Red Bow on Shirt -->
+        <path d="M 21 28 L 27 28 L 24 29 Z" fill="#d32f2f"/>
+        <!-- Torso / Red Vest -->
+        <path d="M 20 28 L 28 28 L 30 38 L 18 38 Z" fill="#d32f2f"/>
+        <!-- White Shirt Collar/Details -->
+        <path d="M 22 28 L 26 28 L 24 32 Z" fill="#ffffff"/>
+        <!-- White Apron/Skirt Details -->
+        <path d="M 21 34 L 27 34 L 28 38 L 20 38 Z" fill="#ffffff"/>
+        <!-- Detached Sleeves -->
+        <rect x="14" y="29" width="4" height="8" fill="#ffffff" rx="1"/>
+        <rect x="30" y="29" width="4" height="8" fill="#ffffff" rx="1"/>
+        <rect x="14" y="28" width="4" height="2" fill="#d32f2f"/>
+        <rect x="30" y="28" width="4" height="2" fill="#d32f2f"/>
+        <!-- Hands -->
+        <circle cx="16" cy="37.5" r="1.5" fill="#ffe0b2"/>
+        <circle cx="32" cy="37.5" r="1.5" fill="#ffe0b2"/>
+        <!-- Shoes / Feet -->
+        <rect x="19" y="38" width="4" height="2" fill="#212121" rx="0.5"/>
+        <rect x="25" y="38" width="4" height="2" fill="#212121" rx="0.5"/>
+    </svg>`,
+
+    walk1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+        <!-- Large Red Back Bow -->
+        <path d="M 9 12 L 23 20 L 37 12 L 33 26 L 13 26 Z" fill="#d32f2f"/>
+        <circle cx="23" cy="20" r="3" fill="#b71c1c"/>
+        <!-- Hair (Back) -->
+        <path d="M 15 18 L 31 18 L 33 32 L 13 32 Z" fill="#2c1d11"/>
+        <!-- Hair tubes -->
+        <rect x="12" y="18" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <rect x="30" y="18" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <!-- Side hair locks -->
+        <path d="M 12 24 L 16 32 L 14 32 L 12 24" fill="#2c1d11"/>
+        <path d="M 34 24 L 30 32 L 32 32 L 34 24" fill="#2c1d11"/>
+        <!-- Face -->
+        <circle cx="23" cy="20" r="8" fill="#ffe0b2"/>
+        <!-- Hair Bangs -->
+        <path d="M 15 16 C 17 12, 29 12, 31 16 C 29 14, 17 14, 15 16" fill="#2c1d11"/>
+        <!-- Hair center bangs detail -->
+        <path d="M 21 14 L 23 18 L 25 14 Z" fill="#2c1d11"/>
+        <!-- Eyes -->
+        <ellipse cx="20" cy="20" rx="1" ry="2" fill="#4e342e"/>
+        <ellipse cx="26" cy="20" rx="1" ry="2" fill="#4e342e"/>
+        <!-- Rosy Cheeks -->
+        <circle cx="17.5" cy="22" r="1" fill="#ffab91" opacity="0.8"/>
+        <circle cx="28.5" cy="22" r="1" fill="#ffab91" opacity="0.8"/>
+        <!-- Mouth -->
+        <path d="M 22 23 Q 23 24 24 23" stroke="#4e342e" stroke-width="0.8" fill="none"/>
+        <!-- Red Bow on Shirt -->
+        <path d="M 20 28 L 26 28 L 23 29 Z" fill="#d32f2f"/>
+        <!-- Torso / Red Vest -->
+        <path d="M 19 28 L 27 28 L 29 38 L 17 38 Z" fill="#d32f2f"/>
+        <!-- White Shirt Collar/Details -->
+        <path d="M 21 28 L 25 28 L 23 32 Z" fill="#ffffff"/>
+        <!-- White Apron/Skirt Details -->
+        <path d="M 20 34 L 26 34 L 27 38 L 19 38 Z" fill="#ffffff"/>
+        <!-- Detached Sleeves -->
+        <rect x="12" y="29" width="4" height="8" fill="#ffffff" rx="1" transform="rotate(10 14 29)"/>
+        <rect x="30" y="29" width="4" height="8" fill="#ffffff" rx="1" transform="rotate(-5 32 29)"/>
+        <rect x="12" y="28" width="4" height="2" fill="#d32f2f" transform="rotate(10 14 29)"/>
+        <rect x="30" y="28" width="4" height="2" fill="#d32f2f" transform="rotate(-5 32 29)"/>
+        <!-- Hands -->
+        <circle cx="13" cy="37" r="1.5" fill="#ffe0b2"/>
+        <circle cx="31.5" cy="37.5" r="1.5" fill="#ffe0b2"/>
+        <!-- Shoes / Feet -->
+        <rect x="17" y="38" width="4" height="2" fill="#212121" rx="0.5" transform="rotate(15 19 39)"/>
+        <rect x="24" y="38" width="4" height="2" fill="#212121" rx="0.5"/>
+    </svg>`,
+
+    walk2: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+        <!-- Large Red Back Bow -->
+        <path d="M 11 12 L 25 20 L 39 12 L 35 26 L 15 26 Z" fill="#d32f2f"/>
+        <circle cx="25" cy="20" r="3" fill="#b71c1c"/>
+        <!-- Hair (Back) -->
+        <path d="M 17 18 L 33 18 L 35 32 L 15 32 Z" fill="#2c1d11"/>
+        <!-- Hair tubes -->
+        <rect x="14" y="18" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <rect x="32" y="18" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <!-- Side hair locks -->
+        <path d="M 14 24 L 18 32 L 16 32 L 14 24" fill="#2c1d11"/>
+        <path d="M 36 24 L 32 32 L 34 32 L 36 24" fill="#2c1d11"/>
+        <!-- Face -->
+        <circle cx="25" cy="20" r="8" fill="#ffe0b2"/>
+        <!-- Hair Bangs -->
+        <path d="M 17 16 C 19 12, 31 12, 33 16 C 31 14, 19 14, 17 16" fill="#2c1d11"/>
+        <!-- Hair center bangs detail -->
+        <path d="M 23 14 L 25 18 L 27 14 Z" fill="#2c1d11"/>
+        <!-- Eyes -->
+        <ellipse cx="22" cy="20" rx="1" ry="2" fill="#4e342e"/>
+        <ellipse cx="28" cy="20" rx="1" ry="2" fill="#4e342e"/>
+        <!-- Rosy Cheeks -->
+        <circle cx="19.5" cy="22" r="1" fill="#ffab91" opacity="0.8"/>
+        <circle cx="30.5" cy="22" r="1" fill="#ffab91" opacity="0.8"/>
+        <!-- Mouth -->
+        <path d="M 24 23 Q 25 24 26 23" stroke="#4e342e" stroke-width="0.8" fill="none"/>
+        <!-- Red Bow on Shirt -->
+        <path d="M 22 28 L 28 28 L 25 29 Z" fill="#d32f2f"/>
+        <!-- Torso / Red Vest -->
+        <path d="M 21 28 L 29 28 L 31 38 L 19 38 Z" fill="#d32f2f"/>
+        <!-- White Shirt Collar/Details -->
+        <path d="M 23 28 L 27 28 L 25 32 Z" fill="#ffffff"/>
+        <!-- White Apron/Skirt Details -->
+        <path d="M 22 34 L 28 34 L 29 38 L 21 38 Z" fill="#ffffff"/>
+        <!-- Detached Sleeves -->
+        <rect x="14" y="29" width="4" height="8" fill="#ffffff" rx="1" transform="rotate(-5 16 29)"/>
+        <rect x="32" y="29" width="4" height="8" fill="#ffffff" rx="1" transform="rotate(-10 34 29)"/>
+        <rect x="14" y="28" width="4" height="2" fill="#d32f2f" transform="rotate(-5 16 29)"/>
+        <rect x="32" y="28" width="4" height="2" fill="#d32f2f" transform="rotate(-10 34 29)"/>
+        <!-- Hands -->
+        <circle cx="15.5" cy="37.5" r="1.5" fill="#ffe0b2"/>
+        <circle cx="34" cy="37" r="1.5" fill="#ffe0b2"/>
+        <!-- Shoes / Feet -->
+        <rect x="20" y="38" width="4" height="2" fill="#212121" rx="0.5"/>
+        <rect x="27" y="38" width="4" height="2" fill="#212121" rx="0.5" transform="rotate(-15 29 39)"/>
+    </svg>`,
+
+    sit: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+        <!-- Large Red Back Bow -->
+        <path d="M 10 14 L 24 21 L 38 14 L 34 27 L 14 27 Z" fill="#d32f2f"/>
+        <circle cx="24" cy="21" r="3" fill="#b71c1c"/>
+        <!-- Hair (Back) -->
+        <path d="M 16 19 L 32 19 L 34 33 L 14 33 Z" fill="#2c1d11"/>
+        <!-- Hair tubes -->
+        <rect x="13" y="19" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <rect x="31" y="19" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <!-- Side hair locks -->
+        <path d="M 13 25 L 17 33 L 15 33 L 13 25" fill="#2c1d11"/>
+        <path d="M 35 25 L 31 33 L 33 33 L 35 25" fill="#2c1d11"/>
+        <!-- Face -->
+        <circle cx="24" cy="21" r="8" fill="#ffe0b2"/>
+        <!-- Hair Bangs -->
+        <path d="M 16 17 C 18 13, 30 13, 32 17 C 30 15, 18 15, 16 17" fill="#2c1d11"/>
+        <!-- Hair center bangs detail -->
+        <path d="M 22 15 L 24 19 L 26 15 Z" fill="#2c1d11"/>
+        <!-- Eyes -->
+        <path d="M 19.5 21 Q 21 22 22.5 21" stroke="#4e342e" stroke-width="1.2" fill="none"/>
+        <path d="M 25.5 21 Q 27 22 28.5 21" stroke="#4e342e" stroke-width="1.2" fill="none"/>
+        <!-- Rosy Cheeks -->
+        <circle cx="18.5" cy="23" r="1" fill="#ffab91" opacity="0.8"/>
+        <circle cx="29.5" cy="23" r="1" fill="#ffab91" opacity="0.8"/>
+        <!-- Mouth -->
+        <path d="M 23 24 Q 24 26 25 24 Z" fill="#e57373" stroke="#4e342e" stroke-width="0.5"/>
+        <!-- Red Bow on Shirt -->
+        <path d="M 21 29 L 27 29 L 24 30 Z" fill="#d32f2f"/>
+        <!-- Torso / Red Vest -->
+        <path d="M 20 29 L 28 29 L 29 38 L 19 38 Z" fill="#d32f2f"/>
+        <!-- White Shirt Collar/Details -->
+        <path d="M 22 29 L 26 29 L 24 33 Z" fill="#ffffff"/>
+        <!-- White Apron/Skirt -->
+        <path d="M 18 38 C 18 36, 30 36, 30 38 L 32 40 L 16 40 Z" fill="#ffffff"/>
+        <path d="M 16 40 L 32 40 L 34 42 L 14 42 Z" fill="#d32f2f"/>
+        <!-- Detached Sleeves -->
+        <rect x="15" y="30" width="4" height="6" fill="#ffffff" rx="1" transform="rotate(-30 17 30)"/>
+        <rect x="29" y="30" width="4" height="6" fill="#ffffff" rx="1" transform="rotate(30 31 30)"/>
+        <!-- Hands holding cup -->
+        <circle cx="20" cy="34" r="1.5" fill="#ffe0b2"/>
+        <circle cx="28" cy="34" r="1.5" fill="#ffe0b2"/>
+        <!-- Tea Cup -->
+        <path d="M 22 34 L 26 34 L 25.5 37 L 22.5 37 Z" fill="#e0e0e0"/>
+        <ellipse cx="24" cy="34" rx="2" ry="0.6" fill="#81c784"/>
+        <!-- Steam -->
+        <path d="M 23.5 32 Q 24 30 24.5 31 T 25 29" stroke="#ffffff" stroke-width="0.8" fill="none" opacity="0.7"/>
+    </svg>`,
+
+    climb: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+        <!-- Large Red Back Bow -->
+        <path d="M 12 12 L 22 20 L 32 14 L 30 26 L 16 26 Z" fill="#d32f2f"/>
+        <!-- Hair (Back) -->
+        <path d="M 18 18 L 32 18 L 30 34 L 16 34 Z" fill="#2c1d11"/>
+        <!-- Hair tubes -->
+        <rect x="15" y="18" width="3" height="6" fill="#d32f2f" rx="1"/>
+        <!-- Side hair locks -->
+        <path d="M 15 24 L 18 32 L 16 32 Z" fill="#2c1d11"/>
+        <!-- Face -->
+        <circle cx="26" cy="20" r="8" fill="#ffe0b2"/>
+        <!-- Hair side/back detail -->
+        <path d="M 20 14 C 22 12, 28 12, 30 16" stroke="#2c1d11" stroke-width="2" fill="none"/>
+        <ellipse cx="28" cy="20" rx="1" ry="2" fill="#4e342e"/>
+        <!-- Rosy Cheek -->
+        <circle cx="30" cy="22" r="1" fill="#ffab91" opacity="0.8"/>
+        <!-- Torso / Red Vest -->
+        <path d="M 20 28 L 28 28 L 29 38 L 19 38 Z" fill="#d32f2f"/>
+        <!-- White Apron/Skirt -->
+        <path d="M 20 34 L 28 34 L 29 38 L 19 38 Z" fill="#ffffff"/>
+        <!-- Arms -->
+        <rect x="28" y="24" width="8" height="3" fill="#ffffff" rx="1" transform="rotate(-15 28 24)"/>
+        <circle cx="36" cy="22" r="1.5" fill="#ffe0b2"/>
+        <rect x="16" y="27" width="6" height="3" fill="#ffffff" rx="1" transform="rotate(30 16 27)"/>
+        <circle cx="14" cy="30" r="1.5" fill="#ffe0b2"/>
+        <!-- Shoes / Feet -->
+        <rect x="18" y="38" width="4" height="2" fill="#212121" rx="0.5" transform="rotate(20 20 39)"/>
+        <rect x="25" y="38" width="4" height="2" fill="#212121" rx="0.5" transform="rotate(-10 27 39)"/>
+    </svg>`,
+
+    fall: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+        <!-- Large Red Back Bow -->
+        <path d="M 8 10 L 24 18 L 40 10 L 35 24 L 13 24 Z" fill="#d32f2f"/>
+        <circle cx="24" cy="18" r="3" fill="#b71c1c"/>
+        <!-- Hair (Back) -->
+        <path d="M 16 16 C 12 28, 36 28, 32 16" fill="#2c1d11"/>
+        <!-- Hair tubes -->
+        <rect x="13" y="14" width="4" height="6" fill="#d32f2f" rx="1" transform="rotate(-10 15 17)"/>
+        <rect x="31" y="14" width="4" height="6" fill="#d32f2f" rx="1" transform="rotate(10 33 17)"/>
+        <!-- Face -->
+        <circle cx="24" cy="18" r="8" fill="#ffe0b2"/>
+        <!-- Hair Bangs -->
+        <path d="M 16 14 C 18 10, 30 10, 32 14" fill="#2c1d11"/>
+        <!-- Eyes -->
+        <circle cx="21" cy="18" r="1.5" fill="#ffe0b2" stroke="#4e342e" stroke-width="1"/>
+        <circle cx="21" cy="18" r="0.5" fill="#4e342e"/>
+        <circle cx="27" cy="18" r="1.5" fill="#ffe0b2" stroke="#4e342e" stroke-width="1"/>
+        <circle cx="27" cy="18" r="0.5" fill="#4e342e"/>
+        <!-- Rosy Cheeks -->
+        <circle cx="18.5" cy="20" r="1" fill="#ffab91" opacity="0.8"/>
+        <circle cx="29.5" cy="20" r="1" fill="#ffab91" opacity="0.8"/>
+        <!-- Mouth -->
+        <ellipse cx="24" cy="22" rx="1.5" ry="2" fill="#e57373" stroke="#4e342e" stroke-width="0.5"/>
+        <!-- Red Bow on Shirt -->
+        <path d="M 21 26 L 27 26 L 24 27 Z" fill="#d32f2f"/>
+        <!-- Torso / Red Vest -->
+        <path d="M 20 26 L 28 26 L 30 36 L 18 36 Z" fill="#d32f2f"/>
+        <!-- White Apron/Skirt -->
+        <path d="M 16 36 C 14 32, 34 32, 32 36 Z" fill="#ffffff"/>
+        <!-- Detached Sleeves -->
+        <rect x="13" y="22" width="4" height="8" fill="#ffffff" rx="1" transform="rotate(-30 15 22)"/>
+        <rect x="31" y="22" width="4" height="8" fill="#ffffff" rx="1" transform="rotate(30 33 22)"/>
+        <!-- Hands -->
+        <circle cx="11.5" cy="19" r="1.5" fill="#ffe0b2"/>
+        <circle cx="36.5" cy="19" r="1.5" fill="#ffe0b2"/>
+        <!-- Shoes / Feet -->
+        <rect x="19" y="38" width="3" height="3" fill="#212121" rx="0.5" transform="rotate(10 20 39)"/>
+        <rect x="26" y="38" width="3" height="3" fill="#212121" rx="0.5" transform="rotate(-10 27 39)"/>
+    </svg>`,
+
+    drag: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+        <!-- Large Red Back Bow -->
+        <path d="M 8 10 L 24 18 L 40 10 L 35 24 L 13 24 Z" fill="#d32f2f"/>
+        <circle cx="24" cy="18" r="3" fill="#b71c1c"/>
+        <!-- Hair (Back) -->
+        <path d="M 15 16 C 11 28, 37 28, 33 16" fill="#2c1d11"/>
+        <!-- Hair tubes -->
+        <rect x="13" y="14" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <rect x="31" y="14" width="4" height="6" fill="#d32f2f" rx="1"/>
+        <!-- Face -->
+        <circle cx="24" cy="18" r="8" fill="#ffe0b2"/>
+        <!-- Hair Bangs -->
+        <path d="M 16 14 C 18 10, 30 10, 32 14" fill="#2c1d11"/>
+        <!-- Eyes -->
+        <path d="M 19.5 16.5 L 22.5 19.5 M 22.5 16.5 L 19.5 19.5" stroke="#4e342e" stroke-width="1.2"/>
+        <path d="M 25.5 16.5 L 28.5 19.5 M 28.5 16.5 L 25.5 19.5" stroke="#4e342e" stroke-width="1.2"/>
+        <!-- Rosy Cheeks -->
+        <circle cx="18.5" cy="21" r="1" fill="#ffab91" opacity="0.8"/>
+        <circle cx="29.5" cy="21" r="1" fill="#ffab91" opacity="0.8"/>
+        <!-- Mouth -->
+        <path d="M 22 22 Q 24 20 26 22" stroke="#4e342e" stroke-width="1" fill="none"/>
+        <!-- Red Bow on Shirt -->
+        <path d="M 21 26 L 27 26 L 24 27 Z" fill="#d32f2f"/>
+        <!-- Torso / Red Vest -->
+        <path d="M 20 26 L 28 26 L 29 38 L 19 38 Z" fill="#d32f2f"/>
+        <!-- White Apron/Skirt -->
+        <path d="M 17 36 C 15 32, 33 32, 31 36 Z" fill="#ffffff"/>
+        <!-- Detached Sleeves -->
+        <rect x="14" y="27" width="4" height="8" fill="#ffffff" rx="1" transform="rotate(15 16 27)"/>
+        <rect x="30" y="27" width="4" height="8" fill="#ffffff" rx="1" transform="rotate(-15 32 27)"/>
+        <!-- Hands dangling -->
+        <circle cx="13" cy="35" r="1.5" fill="#ffe0b2"/>
+        <circle cx="35" cy="35" r="1.5" fill="#ffe0b2"/>
+        <!-- Shoes / Feet -->
+        <rect x="18" y="39" width="3" height="3" fill="#212121" rx="0.5" transform="rotate(30 19 40)"/>
+        <rect x="27" y="39" width="3" height="3" fill="#212121" rx="0.5" transform="rotate(-30 28 40)"/>
+    </svg>`
+};
+
+class Shimeji {
+    constructor() {
+        this.element = document.getElementById('desktop-pet');
+        if (!this.element) {
+            this.element = document.createElement('div');
+            this.element.id = 'desktop-pet';
+            document.body.appendChild(this.element);
+        }
+        
+        this.element.style.touchAction = 'none';
+        
+        this.x = Math.random() * (window.innerWidth - 100) + 50;
+        this.y = 50;
+        this.vx = 0;
+        this.vy = 0;
+        this.state = 'fall';
+        this.direction = Math.random() < 0.5 ? 1 : -1;
+        this.isDragging = false;
+        
+        this.attachedPlatform = null;
+        this.lastPlatformRect = null;
+        
+        this.frame = 'fall';
+        this.animTimer = 0;
+        this.behaviorTimer = performance.now() + 2000;
+        this.lastTime = performance.now();
+        this.animFrameIndex = 0;
+        this.prevState = 'fall';
+        
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+        this.lastMouseTime = 0;
+        
+        this.setupEvents();
+    }
+    
+    setupEvents() {
+        this.onPointerDown = (e) => {
+            e.preventDefault();
+            this.isDragging = true;
+            this.state = 'drag';
+            this.frame = 'drag';
+            this.element.classList.add('dragging');
+            
+            this.element.setPointerCapture(e.pointerId);
+            
+            this.dragOffsetX = e.clientX - this.x;
+            this.dragOffsetY = e.clientY - this.y;
+            
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+            this.lastMouseX = e.clientX;
+            this.lastMouseY = e.clientY;
+            this.lastMouseTime = performance.now();
+            this.vx = 0;
+            this.vy = 0;
+            
+            this.attachedPlatform = null;
+            this.lastPlatformRect = null;
+        };
+        
+        this.onPointerMove = (e) => {
+            if (!this.isDragging) return;
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+            
+            if (e.clientX > this.lastMouseX) {
+                this.direction = 1;
+            } else if (e.clientX < this.lastMouseX) {
+                this.direction = -1;
+            }
+        };
+        
+        this.onPointerUp = (e) => {
+            if (!this.isDragging) return;
+            this.isDragging = false;
+            this.element.classList.remove('dragging');
+            try {
+                this.element.releasePointerCapture(e.pointerId);
+            } catch (err) {}
+            
+            const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            if (speed > 1.5) {
+                this.state = 'fall';
+                this.frame = 'fall';
+            } else {
+                this.state = 'fall';
+                this.frame = 'fall';
+                this.vx = 0;
+                this.vy = 0;
+            }
+        };
+        
+        this.element.addEventListener('pointerdown', this.onPointerDown);
+        this.element.addEventListener('pointermove', this.onPointerMove);
+        this.element.addEventListener('pointerup', this.onPointerUp);
+        this.element.style.display = 'block';
+    }
+    
+    getPlatforms() {
+        const platforms = [];
+        const windows = document.querySelectorAll('.xp-window');
+        windows.forEach(win => {
+            if (!win.classList.contains('minimized') && win.style.display !== 'none' && win.offsetWidth > 0) {
+                const rect = win.getBoundingClientRect();
+                platforms.push({
+                    left: rect.left,
+                    right: rect.right,
+                    top: rect.top,
+                    bottom: rect.top + 30,
+                    element: win
+                });
+            }
+        });
+        return platforms;
+    }
+    
+    chooseBehavior() {
+        if (this.state === 'climb') {
+            const rand = Math.random();
+            if (rand < 0.6) {
+                this.vy = -0.8;
+                this.behaviorTimer = performance.now() + Math.random() * 2000 + 1000;
+            } else {
+                this.state = 'fall';
+                this.frame = 'fall';
+                this.vy = -1.5;
+                this.vx = -this.direction * 2;
+                this.attachedPlatform = null;
+            }
+            return;
+        }
+        
+        const rand = Math.random();
+        if (rand < 0.4) {
+            this.state = 'idle';
+            this.vx = 0;
+            this.vy = 0;
+            this.behaviorTimer = performance.now() + Math.random() * 3000 + 2000;
+        } else if (rand < 0.8) {
+            this.direction = Math.random() < 0.5 ? 1 : -1;
+            this.state = 'walk';
+            this.vx = this.direction * 1.0;
+            this.vy = 0;
+            this.behaviorTimer = performance.now() + Math.random() * 3000 + 2000;
+        } else {
+            this.state = 'sit';
+            this.vx = 0;
+            this.vy = 0;
+            this.behaviorTimer = performance.now() + Math.random() * 4000 + 2000;
+        }
+    }
+    
+    update() {
+        const now = performance.now();
+        const dt = Math.min(now - this.lastTime, 100);
+        this.lastTime = now;
+        
+        if (this.isDragging) {
+            const dt_ms = now - this.lastMouseTime;
+            if (dt_ms > 0) {
+                const instantVx = (this.mouseX - this.lastMouseX) / dt_ms * 16.666;
+                const instantVy = (this.mouseY - this.lastMouseY) / dt_ms * 16.666;
+                
+                this.vx = 0.6 * this.vx + 0.4 * instantVx;
+                this.vy = 0.6 * this.vy + 0.4 * instantVy;
+                
+                const maxVel = 25;
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > maxVel) {
+                    this.vx = (this.vx / speed) * maxVel;
+                    this.vy = (this.vy / speed) * maxVel;
+                }
+            }
+            this.lastMouseX = this.mouseX;
+            this.lastMouseY = this.mouseY;
+            this.lastMouseTime = now;
+            
+            this.x = this.mouseX - this.dragOffsetX;
+            this.y = this.mouseY - this.dragOffsetY;
+            
+            this.x = Math.max(0, Math.min(window.innerWidth - PET_SIZE_W, this.x));
+            this.y = Math.max(0, Math.min(window.innerHeight - 30 - PET_SIZE_H, this.y));
+            
+            this.attachedPlatform = null;
+            this.lastPlatformRect = null;
+            this.state = 'drag';
+            this.frame = 'drag';
+        } else {
+            if (this.attachedPlatform) {
+                const isAttachedInDOM = document.body.contains(this.attachedPlatform);
+                const isMinimized = this.attachedPlatform.classList.contains('minimized');
+                const isHidden = this.attachedPlatform.style.display === 'none';
+                
+                if (!isAttachedInDOM || isMinimized || isHidden) {
+                    this.attachedPlatform = null;
+                    this.lastPlatformRect = null;
+                    this.state = 'fall';
+                } else {
+                    const rect = this.attachedPlatform.getBoundingClientRect();
+                    if (this.lastPlatformRect) {
+                        const dx = rect.left - this.lastPlatformRect.left;
+                        const dy = rect.top - this.lastPlatformRect.top;
+                        this.x += dx;
+                        this.y += dy;
+                    }
+                    this.lastPlatformRect = rect;
+                    
+                    const center = this.x + (PET_SIZE_W / 2);
+                    if (center < rect.left || center > rect.right) {
+                        this.attachedPlatform = null;
+                        this.lastPlatformRect = null;
+                        this.state = 'fall';
+                    }
+                }
+            }
+            
+            // Movement physics depending on the state
+            if (this.state === 'climb') {
+                this.y += this.vy;
+                if (this.y <= 0) {
+                    this.y = 0;
+                    this.state = 'fall';
+                    this.vy = 0;
+                    this.vx = -this.direction * 1.5;
+                }
+            } else if (this.state === 'walk') {
+                this.x += this.vx;
+                
+                if (this.attachedPlatform) {
+                    const rect = this.lastPlatformRect;
+                    const center = this.x + (PET_SIZE_W / 2);
+                    if (center < rect.left + 5 && this.direction === -1) {
+                        if (Math.random() < 0.6) {
+                            this.direction = 1;
+                            this.vx = 1.0;
+                            this.x = rect.left - (PET_SIZE_W / 2) + 6;
+                        }
+                    } else if (center > rect.right - 5 && this.direction === 1) {
+                        if (Math.random() < 0.6) {
+                            this.direction = -1;
+                            this.vx = -1.0;
+                            this.x = rect.right - (PET_SIZE_W / 2) - 6;
+                        }
+                    }
+                } else {
+                    const floorY = window.innerHeight - 30 - PET_SIZE_H;
+                    if (this.y < floorY) {
+                        this.state = 'fall';
+                    } else {
+                        this.y = floorY;
+                        this.vy = 0;
+                        this.vx = this.direction * 1.0;
+                    }
+                }
+            } else if (this.state === 'fall') {
+                this.vy += 0.4;
+                this.vx *= 0.995;
+                this.vy *= 0.995;
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                const floorY = window.innerHeight - 30 - PET_SIZE_H;
+                if (this.y >= floorY) {
+                    this.y = floorY;
+                    if (this.vy > 3) {
+                        this.vy = -this.vy * 0.35;
+                        this.vx *= 0.7;
+                    } else {
+                        this.vy = 0;
+                        this.vx = 0;
+                        this.state = 'idle';
+                        this.behaviorTimer = performance.now() + Math.random() * 2000 + 1000;
+                    }
+                }
+            } else {
+                // idle, sit, etc.
+                this.vx = 0;
+                this.vy = 0;
+                if (!this.attachedPlatform) {
+                    const floorY = window.innerHeight - 30 - PET_SIZE_H;
+                    this.y = floorY;
+                }
+            }
+            
+            // Screen edge boundary checks
+            const rightBound = window.innerWidth - PET_SIZE_W;
+            if (this.x <= 0) {
+                this.x = 0;
+                if (Math.abs(this.vx) > 1) {
+                    this.vx = -this.vx * 0.5;
+                } else {
+                    this.vx = 0;
+                    if (this.state === 'walk') {
+                        this.direction = 1;
+                        this.vx = 1.0;
+                    }
+                }
+            } else if (this.x >= rightBound) {
+                this.x = rightBound;
+                if (Math.abs(this.vx) > 1) {
+                    this.vx = -this.vx * 0.5;
+                } else {
+                    this.vx = 0;
+                    if (this.state === 'walk') {
+                        this.direction = -1;
+                        this.vx = -1.0;
+                    }
+                }
+            }
+            
+            // Platform landing check while falling
+            if (!this.attachedPlatform && this.state !== 'climb' && this.vy >= 0) {
+                const platforms = this.getPlatforms();
+                const feetY = this.y + PET_SIZE_H;
+                for (let i = 0; i < platforms.length; i++) {
+                    const plat = platforms[i];
+                    const center = this.x + (PET_SIZE_W / 2);
+                    if (center >= plat.left && center <= plat.right) {
+                        const prevFeetY = feetY - this.vy;
+                        if (feetY >= plat.top && prevFeetY <= plat.top + 6) {
+                            this.y = plat.top - PET_SIZE_H;
+                            if (this.vy > 3) {
+                                this.vy = -this.vy * 0.3;
+                                this.vx *= 0.7;
+                            } else {
+                                this.vy = 0;
+                                this.vx = 0;
+                                this.attachedPlatform = plat.element;
+                                this.lastPlatformRect = plat.element.getBoundingClientRect();
+                                this.state = 'idle';
+                                this.behaviorTimer = performance.now() + Math.random() * 2000 + 1000;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!this.isDragging && this.state !== 'fall' && performance.now() > this.behaviorTimer) {
+            this.chooseBehavior();
+        }
+        
+        if (!this.isDragging && !this.attachedPlatform && this.state !== 'climb' && this.y < window.innerHeight - 30 - PET_SIZE_H) {
+            if (this.vy > 0.5) {
+                this.state = 'fall';
+            }
+        }
+        
+        const framesList = (typeof SPRITE_MAP !== 'undefined' && SPRITE_MAP[this.state]) || (typeof SPRITE_MAP !== 'undefined' && SPRITE_MAP['idle']) || [];
+        if (this.state !== this.prevState) {
+            this.animFrameIndex = 0;
+            this.animTimer = 0;
+            this.prevState = this.state;
+        }
+        
+        const frameDuration = this.state === 'walk' ? 120 : 300;
+        this.animTimer += dt;
+        if (this.animTimer > frameDuration) {
+            if (framesList.length > 0) {
+                this.animFrameIndex = (this.animFrameIndex + 1) % framesList.length;
+            }
+            this.animTimer = 0;
+        }
+
+        if (this.state === 'walk') {
+            this.frame = (this.animFrameIndex % 2 === 0) ? 'walk1' : 'walk2';
+        } else {
+            this.frame = this.state;
+        }
+        
+        this.render();
+    }
+    
+    render() {
+        if (spritesImageLoaded) {
+            let frames = SPRITE_MAP[this.state] || SPRITE_MAP['idle'];
+            let frame = frames[this.animFrameIndex % frames.length];
+            if (frame) {
+                if (!this.spriteEl || this.spriteEl.tagName !== 'CANVAS') {
+                    if (this.spriteEl) {
+                        this.spriteEl.remove();
+                    }
+                    this.spriteEl = document.createElement('canvas');
+                    this.spriteEl.className = 'pet-sprite';
+                    this.spriteEl.style.position = 'absolute';
+                    this.spriteEl.style.bottom = '0';
+                    this.spriteEl.style.left = '50%';
+                    this.spriteEl.style.transformOrigin = 'bottom center';
+                    this.spriteEl.style.imageRendering = 'pixelated';
+                    this.element.appendChild(this.spriteEl);
+                }
+                
+                if (this.element.childNodes.length > 1 || (this.element.childNodes.length === 1 && this.element.childNodes[0] !== this.spriteEl)) {
+                    this.element.innerHTML = '';
+                    this.element.appendChild(this.spriteEl);
+                }
+                
+                let currentFrame = frame;
+                let isHighres = false;
+                
+                if (frame.type === 'highres' || frame.type === 'highres_walk' || frame.type === 'highres_fall' || frame.type === 'highres_sit') {
+                    let img;
+                    if (frame.type === 'highres') {
+                        img = idleFrames[frame.index];
+                    } else if (frame.type === 'highres_walk') {
+                        img = walkFrames[frame.index];
+                    } else if (frame.type === 'highres_fall') {
+                        img = fallFrames[frame.index];
+                    } else {
+                        img = sitFrames[frame.index];
+                    }
+                    
+                    if (img && img.complete && img.naturalWidth > 0) {
+                        isHighres = true;
+                        this.spriteEl.width = img.width;
+                        this.spriteEl.height = img.height;
+                        
+                        const ctx = this.spriteEl.getContext('2d');
+                        ctx.clearRect(0, 0, img.width, img.height);
+                        ctx.drawImage(img, 0, 0);
+                        
+                        const displayH = PET_SIZE_H;
+                        const displayW = (img.width / img.height) * displayH;
+                        this.spriteEl.style.width = `${displayW}px`;
+                        this.spriteEl.style.height = `${displayH}px`;
+                    } else {
+                        if (frame.type === 'highres') {
+                            currentFrame = { r: 2, c: this.animFrameIndex % 4 };
+                        } else if (frame.type === 'highres_walk') {
+                            currentFrame = { r: 3, c: this.animFrameIndex % 6 };
+                        } else if (frame.type === 'highres_fall') {
+                            currentFrame = { r: 18, c: 0 };
+                        } else {
+                            currentFrame = { r: 19, c: this.animFrameIndex % 4 };
+                        }
+                    }
+                }
+                
+                if (!isHighres) {
+                    const cellW = 24;
+                    const cellH = 32;
+                    this.spriteEl.width = cellW;
+                    this.spriteEl.height = cellH;
+                    
+                    const ctx = this.spriteEl.getContext('2d');
+                    ctx.clearRect(0, 0, cellW, cellH);
+                    
+                    const sx = currentFrame.c * cellW;
+                    const sy = currentFrame.r * cellH;
+                    
+                    ctx.drawImage(spritesImage, sx, sy, cellW, cellH, 0, 0, cellW, cellH);
+                    
+                    try {
+                        const imgData = ctx.getImageData(0, 0, cellW, cellH);
+                        const data = imgData.data;
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i+1];
+                            const b = data[i+2];
+                            const diff = Math.abs(r - 47) + Math.abs(g - 95) + Math.abs(b - 115);
+                            if (diff < 30) {
+                                data[i+3] = 0;
+                            }
+                        }
+                        ctx.putImageData(imgData, 0, 0);
+                    } catch (e) {
+                        console.error("Transparency error:", e);
+                    }
+                    
+                    const displayW = cellW * SPRITE_SCALE;
+                    const displayH = cellH * SPRITE_SCALE;
+                    this.spriteEl.style.width = `${displayW}px`;
+                    this.spriteEl.style.height = `${displayH}px`;
+                }
+                
+                this.spriteEl.style.display = 'block';
+                
+                const scaleX = this.direction === -1 ? -1 : 1;
+                let rotation = 0;
+                if (this.state === 'climb') {
+                    rotation = this.direction === -1 ? 90 : -90;
+                }
+                this.spriteEl.style.transform = `translateX(-50%) scaleX(${scaleX}) rotate(${rotation}deg)`;
+                
+                this.element.style.backgroundImage = 'none';
+                this.element.style.width = `${PET_SIZE_W}px`;
+                this.element.style.height = `${PET_SIZE_H}px`;
+                this.element.style.transform = 'none';
+                
+                this.element.style.left = `${this.x}px`;
+                this.element.style.top = `${this.y}px`;
+                return;
+            }
+        }
+        
+        if (this.spriteEl) {
+            this.spriteEl.style.display = 'none';
+        }
+        this.element.style.backgroundImage = 'none';
+        this.element.style.transformOrigin = 'initial';
+        const svgString = PET_SPRITES[this.frame] || PET_SPRITES['idle'];
+        if (this.element.innerHTML !== svgString && !this.element.querySelector('svg')) {
+            this.element.innerHTML = '';
+            if (this.spriteEl) this.element.appendChild(this.spriteEl);
+            
+            const temp = document.createElement('div');
+            temp.innerHTML = svgString;
+            const svgNode = temp.firstElementChild;
+            this.element.insertBefore(svgNode, this.element.firstChild);
+        }
+        
+        this.element.style.width = `${PET_SIZE_W}px`;
+        this.element.style.height = `${PET_SIZE_H}px`;
+        this.element.style.left = `${this.x}px`;
+        this.element.style.top = `${this.y}px`;
+        
+        const transformStr = this.direction === -1 ? 'scaleX(-1)' : 'scaleX(1)';
+        this.element.style.transform = transformStr;
+    }
+    
+    destroy() {
+        this.element.removeEventListener('pointerdown', this.onPointerDown);
+        this.element.removeEventListener('pointermove', this.onPointerMove);
+        this.element.removeEventListener('pointerup', this.onPointerUp);
+        this.element.style.display = 'none';
+        this.element.innerHTML = '';
+        this.spriteEl = null;
+    }
+}
+
+let activePet = null;
+let petAnimationId = null;
+
+function petLoop() {
+    if (activePet) {
+        activePet.update();
+        petAnimationId = requestAnimationFrame(petLoop);
+    }
+}
+
+function toggleDesktopPet() {
+    if (activePet) {
+        if (petAnimationId) {
+            cancelAnimationFrame(petAnimationId);
+            petAnimationId = null;
+        }
+        activePet.destroy();
+        activePet = null;
+    } else {
+        activePet = new Shimeji();
+        petLoop();
+    }
+}
+
+const PET_SIZE_W = 120;
+const PET_SIZE_H = 160;
+const SPRITE_SCALE = 5.0;
+
+const spritesImage = new Image();
+spritesImage.src = 'reimu_sprites.png';
+let spritesImageLoaded = false;
+spritesImage.onload = () => {
+    spritesImageLoaded = true;
+};
+if (spritesImage.complete) {
+    spritesImageLoaded = true;
+}
+
+const idleFrames = [];
+const numIdleFrames = 5;
+let idleFramesLoadedCount = 0;
+for (let i = 0; i < numIdleFrames; i++) {
+    const img = new Image();
+    img.src = `reimu_idle_${i}.png`;
+    img.onload = () => {
+        idleFramesLoadedCount++;
+    };
+    if (img.complete) {
+        idleFramesLoadedCount++;
+    }
+    idleFrames.push(img);
+}
+
+const walkFrames = [];
+const numWalkFrames = 8;
+let walkFramesLoadedCount = 0;
+for (let i = 0; i < numWalkFrames; i++) {
+    const img = new Image();
+    img.src = `reimu_walk_${i}.png`;
+    img.onload = () => {
+        walkFramesLoadedCount++;
+    };
+    if (img.complete) {
+        walkFramesLoadedCount++;
+    }
+    walkFrames.push(img);
+}
+
+const fallFrames = [];
+const numFallFrames = 1;
+let fallFramesLoadedCount = 0;
+for (let i = 0; i < numFallFrames; i++) {
+    const img = new Image();
+    img.src = `reimu_fall_${i}.png`;
+    img.onload = () => {
+        fallFramesLoadedCount++;
+    };
+    if (img.complete) {
+        fallFramesLoadedCount++;
+    }
+    fallFrames.push(img);
+}
+
+const sitFrames = [];
+const numSitFrames = 9;
+let sitFramesLoadedCount = 0;
+for (let i = 0; i < numSitFrames; i++) {
+    const img = new Image();
+    img.src = `reimu_sit_${i}.png`;
+    img.onload = () => {
+        sitFramesLoadedCount++;
+    };
+    if (img.complete) {
+        sitFramesLoadedCount++;
+    }
+    sitFrames.push(img);
+}
+
+const SPRITE_MAP = {
+    idle: [
+        { type: 'highres', index: 0 },
+        { type: 'highres', index: 1 },
+        { type: 'highres', index: 2 },
+        { type: 'highres', index: 3 },
+        { type: 'highres', index: 4 }
+    ],
+    walk: [
+        { type: 'highres_walk', index: 0 },
+        { type: 'highres_walk', index: 1 },
+        { type: 'highres_walk', index: 2 },
+        { type: 'highres_walk', index: 3 },
+        { type: 'highres_walk', index: 4 },
+        { type: 'highres_walk', index: 5 },
+        { type: 'highres_walk', index: 6 },
+        { type: 'highres_walk', index: 7 }
+    ],
+    sit: [
+        { type: 'highres_sit', index: 0 },
+        { type: 'highres_sit', index: 1 },
+        // Loop 1 (2 to 7 are seated/grounded)
+        { type: 'highres_sit', index: 2 },
+        { type: 'highres_sit', index: 3 },
+        { type: 'highres_sit', index: 4 },
+        { type: 'highres_sit', index: 5 },
+        { type: 'highres_sit', index: 6 },
+        { type: 'highres_sit', index: 7 },
+        // Loop 2 (to extend sit duration)
+        { type: 'highres_sit', index: 2 },
+        { type: 'highres_sit', index: 3 },
+        { type: 'highres_sit', index: 4 },
+        { type: 'highres_sit', index: 5 },
+        { type: 'highres_sit', index: 6 },
+        { type: 'highres_sit', index: 7 }
+    ],
+    climb: [
+        { r: 4, c: 1 },
+        { r: 4, c: 2 }
+    ],
+    fall: [
+        { type: 'highres_fall', index: 0 }
+    ],
+    drag: [
+        { type: 'highres_fall', index: 0 }
+    ]
+};
 

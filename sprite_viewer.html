@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sprite Sheet Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #121212;
+            color: #e0e0e0;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+        }
+        #sheet-container {
+            position: relative;
+            border: 1px solid #444;
+            max-height: 85vh;
+            overflow-y: auto;
+            background: #1e1e1e;
+        }
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        #info-panel {
+            flex-grow: 1;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .sprite-preview {
+            width: 120px;
+            height: 120px;
+            border: 2px solid #555;
+            background: #2d2d2d;
+            image-rendering: pixelated;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sprite-preview canvas {
+            width: auto;
+            height: auto;
+            max-width: 120px;
+            max-height: 120px;
+            border: none;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        .selected-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .selected-item {
+            background: #333;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        button {
+            padding: 8px 12px;
+            background: #245edb;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #3f8cf3;
+        }
+    </style>
+</head>
+<body>
+    <div id="sheet-container">
+        <canvas id="sheetCanvas"></canvas>
+    </div>
+    
+    <div id="info-panel">
+        <h2>Sprite Details</h2>
+        <div class="sprite-preview" id="previewContainer">
+            <canvas id="previewCanvas"></canvas>
+        </div>
+        <div>
+            <strong>Sprite Info:</strong>
+            <pre id="spriteInfo">Click on a sprite in the sheet to inspect.</pre>
+        </div>
+        <div>
+            <h3>Actions Config Planner</h3>
+            <p>Select sprite indices for Shimeji states:</p>
+            <div id="config-inputs">
+                <div><strong>Idle (Standing):</strong> <span id="val-idle">-</span></div>
+                <div><strong>Walk 1:</strong> <span id="val-walk1">-</span></div>
+                <div><strong>Walk 2:</strong> <span id="val-walk2">-</span></div>
+                <div><strong>Sit (Tea/Rest):</strong> <span id="val-sit">-</span></div>
+                <div><strong>Climb:</strong> <span id="val-climb">-</span></div>
+                <div><strong>Fall:</strong> <span id="val-fall">-</span></div>
+                <div><strong>Drag (Dizzy):</strong> <span id="val-drag">-</span></div>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button onclick="assignTo('idle')">Assign to Idle</button>
+                <button onclick="assignTo('walk1')">Assign to Walk 1</button>
+                <button onclick="assignTo('walk2')">Assign to Walk 2</button>
+            </div>
+            <div style="margin-top: 10px; display: flex; gap: 10px;">
+                <button onclick="assignTo('sit')">Assign to Sit</button>
+                <button onclick="assignTo('climb')">Assign to Climb</button>
+                <button onclick="assignTo('fall')">Assign to Fall</button>
+                <button onclick="assignTo('drag')">Assign to Drag</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sprites = [];
+        let selectedSprite = null;
+        let config = {
+            idle: 0,
+            walk1: 0,
+            walk2: 0,
+            sit: 0,
+            climb: 0,
+            fall: 0,
+            drag: 0
+        };
+
+        const sheetCanvas = document.getElementById('sheetCanvas');
+        const sheetCtx = sheetCanvas.getContext('2d');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
+
+        const img = new Image();
+        img.src = 'reimu_sprites.png';
+        img.onload = function() {
+            sheetCanvas.width = img.width;
+            sheetCanvas.height = img.height;
+            sheetCtx.drawImage(img, 0, 0);
+            
+            // Fetch the coordinates JSON
+            fetch('sprites_coords.json')
+                .then(r => r.json())
+                .then(data => {
+                    sprites = data;
+                    drawOverlay();
+                });
+        };
+
+        function drawOverlay() {
+            sheetCtx.clearRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+            sheetCtx.drawImage(img, 0, 0);
+            
+            sheetCtx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
+            sheetCtx.lineWidth = 1;
+            
+            sprites.forEach(s => {
+                sheetCtx.strokeRect(s.x, s.y, s.w, s.h);
+            });
+
+            if (selectedSprite) {
+                sheetCtx.strokeStyle = '#00ff00';
+                sheetCtx.lineWidth = 2;
+                sheetCtx.strokeRect(selectedSprite.x, selectedSprite.y, selectedSprite.w, selectedSprite.h);
+            }
+        }
+
+        sheetCanvas.addEventListener('click', (e) => {
+            const rect = sheetCanvas.getBoundingClientRect();
+            // Calculate actual canvas coords from mouse click
+            const scaleX = sheetCanvas.width / rect.width;
+            const scaleY = sheetCanvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+
+            // Find clicked sprite
+            let clicked = null;
+            for (let i = 0; i < sprites.length; i++) {
+                const s = sprites[i];
+                if (clickX >= s.x && clickX <= s.x + s.w && clickY >= s.y && clickY <= s.y + s.h) {
+                    clicked = s;
+                    break;
+                }
+            }
+
+            if (clicked) {
+                selectedSprite = clicked;
+                drawOverlay();
+                showSpriteDetails(clicked);
+            }
+        });
+
+        function showSpriteDetails(s) {
+            document.getElementById('spriteInfo').textContent = JSON.stringify(s, null, 2);
+            
+            // Draw to preview canvas
+            previewCanvas.width = s.w;
+            previewCanvas.height = s.h;
+            previewCtx.clearRect(0, 0, s.w, s.h);
+            previewCtx.drawImage(img, s.x, s.y, s.w, s.h, 0, 0, s.w, s.h);
+        }
+
+        function assignTo(state) {
+            if (!selectedSprite) {
+                alert('Please select a sprite first!');
+                return;
+            }
+            config[state] = selectedSprite.index;
+            document.getElementById(`val-${state}`).textContent = selectedSprite.index;
+            console.log("Current mapping:", config);
+        }
+    </script>
+</body>
+</html>

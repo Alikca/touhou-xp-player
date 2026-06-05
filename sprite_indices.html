@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sprite Indices Map</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #2f5f73; /* Match sheet background */
+            color: #fff;
+            padding: 20px;
+        }
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .sprite-card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            width: 80px;
+            height: 100px;
+        }
+        .sprite-img {
+            background-image: url('reimu_sprites.png');
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+        }
+        .index-num {
+            font-weight: bold;
+            font-size: 12px;
+            margin-top: 5px;
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .coords {
+            font-size: 9px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Reimu Sprites Index Map</h1>
+    <p>All 277 detected sprites are displayed below with their index numbers. Use these index numbers in <code>player.js</code> to map actions.</p>
+    <div class="grid" id="grid"></div>
+
+    <script>
+        fetch('sprites_coords.json')
+            .then(r => r.json())
+            .then(sprites => {
+                const grid = document.getElementById('grid');
+                sprites.forEach(s => {
+                    const card = document.createElement('div');
+                    card.className = 'sprite-card';
+                    
+                    const img = document.createElement('div');
+                    img.className = 'sprite-img';
+                    img.style.width = s.w + 'px';
+                    img.style.height = s.h + 'px';
+                    img.style.backgroundPosition = `-${s.x}px -${s.y}px`;
+                    
+                    const indexLabel = document.createElement('div');
+                    indexLabel.className = 'index-num';
+                    indexLabel.textContent = `#${s.index}`;
+
+                    const coordsLabel = document.createElement('div');
+                    coordsLabel.className = 'coords';
+                    coordsLabel.textContent = `${s.w}x${s.h}`;
+                    
+                    card.appendChild(img);
+                    card.appendChild(indexLabel);
+                    card.appendChild(coordsLabel);
+                    grid.appendChild(card);
+                });
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spritesheet Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1e1e1e;
+            color: #fff;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid #555;
+            background: #2d2d2d;
+            margin-top: 10px;
+        }
+        pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Reimu Spritesheet Analyzer</h1>
+    <p>Loading and analyzing <code>reimu_sprites.png</code>...</p>
+    <div style="display: flex; gap: 20px;">
+        <div>
+            <h3>Visualized Grid</h3>
+            <canvas id="canvas"></canvas>
+        </div>
+        <div style="flex-grow: 1;">
+            <h3>Detected Coordinates JSON</h3>
+            <button onclick="copyJSON()">Copy to Clipboard</button>
+            <pre id="output">Analyzing...</pre>
+        </div>
+    </div>
+
+    <script>
+        const img = new Image();
+        img.src = 'reimu_sprites.png';
+        img.onload = function() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const w = img.width;
+            const h = img.height;
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(img, 0, 0);
+
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+
+            // Background color is at (0, 0)
+            const bgR = data[0];
+            const bgG = data[1];
+            const bgB = data[2];
+            
+            // Helper to check if pixel is background
+            // Allow a small tolerance
+            function isBg(x, y) {
+                const idx = (y * w + x) * 4;
+                const r = data[idx];
+                const g = data[idx + 1];
+                const b = data[idx + 2];
+                const diff = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
+                return diff < 15; // tolerance
+            }
+
+            // 1. Row projection
+            const rowHasContent = new Array(h).fill(false);
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    if (!isBg(x, y)) {
+                        rowHasContent[y] = true;
+                        break;
+                    }
+                }
+            }
+
+            // Group rows into blocks
+            const rows = [];
+            let inRow = false;
+            let startY = 0;
+            for (let y = 0; y < h; y++) {
+                if (rowHasContent[y] && !inRow) {
+                    startY = y;
+                    inRow = true;
+                } else if (!rowHasContent[y] && inRow) {
+                    rows.push({ startY, endY: y - 1 });
+                    inRow = false;
+                }
+            }
+            if (inRow) {
+                rows.push({ startY, endY: h - 1 });
+            }
+
+            // 2. Col projection for each row block
+            const sprites = [];
+            rows.forEach((row, rowIndex) => {
+                const colHasContent = new Array(w).fill(false);
+                for (let x = 0; x < w; x++) {
+                    for (let y = row.startY; y <= row.endY; y++) {
+                        if (!isBg(x, y)) {
+                            colHasContent[x] = true;
+                            break;
+                        }
+                    }
+                }
+
+                let inCol = false;
+                let startX = 0;
+                const colsInRow = [];
+                for (let x = 0; x < w; x++) {
+                    if (colHasContent[x] && !inCol) {
+                        startX = x;
+                        inCol = true;
+                    } else if (!colHasContent[x] && inCol) {
+                        colsInRow.push({ startX, endX: x - 1 });
+                        inCol = false;
+                    }
+                }
+                if (inCol) {
+                    colsInRow.push({ startX, endX: w - 1 });
+                }
+
+                colsInRow.forEach((col, colIndex) => {
+                    // Refine bounding box for this specific sprite
+                    let minX = col.startX, maxX = col.endX;
+                    let minY = row.startY, maxY = row.endY;
+
+                    // Trim top/bottom blank space
+                    while (minY <= maxY) {
+                        let empty = true;
+                        for (let x = minX; x <= maxX; x++) {
+                            if (!isBg(x, minY)) { empty = false; break; }
+                        }
+                        if (empty) minY++; else break;
+                    }
+                    while (maxY >= minY) {
+                        let empty = true;
+                        for (let x = minX; x <= maxX; x++) {
+                            if (!isBg(x, maxY)) { empty = false; break; }
+                        }
+                        if (empty) maxY--; else break;
+                    }
+
+                    // Trim left/right blank space
+                    while (minX <= maxX) {
+                        let empty = true;
+                        for (let y = minY; y <= maxY; y++) {
+                            if (!isBg(minX, y)) { empty = false; break; }
+                        }
+                        if (empty) minX++; else break;
+                    }
+                    while (maxX >= minX) {
+                        let empty = true;
+                        for (let y = minY; y <= maxY; y++) {
+                            if (!isBg(maxX, y)) { empty = false; break; }
+                        }
+                        if (empty) maxX--; else break;
+                    }
+
+                    if (maxX >= minX && maxY >= minY) {
+                        sprites.push({
+                            row: rowIndex,
+                            col: colIndex,
+                            x: minX,
+                            y: minY,
+                            width: (maxX - minX) + 1,
+                            height: (maxY - minY) + 1
+                        });
+                    }
+                });
+            });
+
+            // Draw bounding boxes on canvas
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 1;
+            ctx.fillStyle = 'yellow';
+            ctx.font = '8px Arial';
+            
+            sprites.forEach((s, idx) => {
+                ctx.strokeRect(s.x, s.y, s.width, s.height);
+                ctx.fillText(idx, s.x + 2, s.y + s.height - 2);
+            });
+
+            // Output JSON
+            document.getElementById('output').textContent = JSON.stringify(sprites, null, 2);
+        };
+
+        function copyJSON() {
+            const text = document.getElementById('output').textContent;
+            navigator.clipboard.writeText(text);
+            alert('JSON copied!');
+        }
+    </script>
+</body>
+</html>
