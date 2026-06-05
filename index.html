@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touhou BGM Player - Windows XP Edition</title>
+    <!-- Tahoma is the iconic Windows XP font, we will load it or fallback to Segoe UI / Arial -->
+    <link href="https://fonts.googleapis.com/css2?family=Tahoma&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Desktop Area -->
+    <div class="desktop" id="desktop">
+        
+        <!-- Desktop Icons Grid -->
+        <div class="desktop-icons">
+            <div class="desktop-icon" id="icon-player" data-target="window-player">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect x='6' y='6' width='36' height='36' rx='8' fill='%230055ff'/><circle cx='24' cy='24' r='14' fill='%23ffffff'/><polygon points='20,17 32,24 20,31' fill='%230055ff'/><rect x='8' y='8' width='8' height='8' fill='%23ffcc00' opacity='0.7'/></svg>" alt="WMP Icon">
+                <span>Touhou Media Player</span>
+            </div>
+            
+            <div class="desktop-icon" id="icon-readme" data-target="window-readme">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M10 4h20l10 10v28c0 2-2 4-4 4H10c-2 0-4-2-4-4V8c0-2 2-4 4-4z' fill='%23f4f4f4' stroke='%23bbb' stroke-width='2'/><path d='M30 4v10h10' fill='none' stroke='%23bbb' stroke-width='2'/><line x1='12' y1='18' x2='30' y2='18' stroke='%230055ff' stroke-width='2'/><line x1='12' y1='24' x2='36' y2='24' stroke='%23555' stroke-width='2'/><line x1='12' y1='30' x2='36' y2='30' stroke='%23555' stroke-width='2'/><line x1='12' y1='36' x2='26' y2='36' stroke='%23555' stroke-width='2'/></svg>" alt="Notepad Icon">
+                <span>Readme.txt</span>
+            </div>
+            
+            <div class="desktop-icon" id="icon-mycomputer">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect x='8' y='8' width='32' height='22' rx='2' fill='%23dedede' stroke='%23333' stroke-width='3'/><rect x='10' y='10' width='28' height='18' fill='%2300ccff'/><path d='M16 30l-4 8h24l-4-8z' fill='%23999' stroke='%23333' stroke-width='2'/><rect x='6' y='38' width='36' height='4' rx='1' fill='%23666' stroke='%23333' stroke-width='2'/></svg>" alt="My Computer Icon">
+                <span>Mi PC</span>
+            </div>
+
+            <div class="desktop-icon" id="icon-recycle" data-empty="true">
+                <img id="recycle-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect x='12' y='14' width='24' height='26' rx='3' fill='%23dedede' stroke='%23777' stroke-width='2'/><line x1='8' y1='10' x2='40' y2='10' stroke='%23777' stroke-width='4' stroke-linecap='round'/><path d='M18 10V6h12v4' fill='none' stroke='%23777' stroke-width='2'/><line x1='18' y1='18' x2='18' y2='34' stroke='%23999' stroke-width='2'/><line x1='24' y1='18' x2='24' y2='34' stroke='%23999' stroke-width='2'/><line x1='30' y1='18' x2='30' y2='34' stroke='%23999' stroke-width='2'/></svg>" alt="Recycle Bin Icon">
+                <span id="recycle-text">Papelera</span>
+            </div>
+        </div>
+
+        <!-- WINDOW: Touhou Media Player -->
+        <div class="xp-window active" id="window-player" style="left: 80px; top: 40px; width: 880px;">
+            <div class="title-bar" id="window-player-header">
+                <div class="title-bar-text">
+                    <img class="window-mini-icon" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect x='6' y='6' width='36' height='36' rx='8' fill='%230055ff'/><circle cx='24' cy='24' r='14' fill='%23ffffff'/><polygon points='20,17 32,24 20,31' fill='%230055ff'/></svg>" alt="icon">
+                    Touhou Media Player - Windows XP Edition
+                </div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize" class="btn-minimize" onclick="minimizeWindow('window-player')"></button>
+                    <button aria-label="Maximize" class="btn-maximize" onclick="toggleMaximize('window-player')"></button>
+                    <button aria-label="Close" class="btn-close" onclick="closeWindow('window-player')"></button>
+                </div>
+            </div>
+            
+            <!-- Menu bar -->
+            <div class="menu-bar">
+                <div class="menu-item">Archivo
+                    <div class="dropdown-menu">
+                        <div onclick="document.getElementById('file-input').click()">Abrir archivo local...</div>
+                        <hr>
+                        <div onclick="closeWindow('window-player')">Salir</div>
+                    </div>
+                </div>
+                <div class="menu-item">Ver
+                    <div class="dropdown-menu">
+                        <div onclick="toggleSection('player-visualizer-container')">✓ Visualizador</div>
+                        <div onclick="toggleSection('filters-sidebar')">✓ Filtros de Audio</div>
+                        <div onclick="toggleSection('playlist-container')">✓ Lista de Reproducción</div>
+                    </div>
+                </div>
+                <div class="menu-item">Reproducción
+                    <div class="dropdown-menu">
+                        <div onclick="togglePlay()">Reproducir / Pausar</div>
+                        <div onclick="stopSong()">Detener</div>
+                        <div onclick="prevSong()">Anterior</div>
+                        <div onclick="nextSong()">Siguiente</div>
+                        <hr>
+                        <div onclick="toggleShuffle()">Aleatorio: <span id="shuffle-indicator">OFF</span></div>
+                        <div onclick="toggleRepeat()">Repetir: <span id="repeat-indicator">OFF</span></div>
+                    </div>
+                </div>
+                <div class="menu-item">Ayuda
+                    <div class="dropdown-menu">
+                        <div onclick="openWindow('window-readme')">Acerca de Touhou XP Player...</div>
+                    </div>
+                </div>
+                <input type="file" id="file-input" accept="audio/*" style="display:none;">
+            </div>
+
+            <!-- Main Window Client Area -->
+            <div class="window-body">
+                
+                <!-- Main Container layout -->
+                <div class="player-main-layout">
+                    
+                    <!-- Left Sidebar: Audio Filters DSP -->
+                    <div class="sidebar filters-sidebar" id="filters-sidebar">
+                        <div class="sidebar-title">Filtros de Audio (DSP)</div>
+                        <div class="sidebar-body">
+                            
+                            <!-- Master Bypass -->
+                            <div class="filter-group bypass-group">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="bypass-filters">
+                                    <span class="checkmark"></span>
+                                    Desactivar Todos los Filtros
+                                </label>
+                            </div>
+
+                            <hr class="xp-divider">
+
+                            <!-- Pitch & Speed Control -->
+                            <div class="filter-group">
+                                <div class="filter-header">
+                                    <span>Tono y Velocidad</span>
+                                    <span class="value-display" id="pitch-val">1.0x</span>
+                                </div>
+                                <input type="range" class="xp-slider" id="filter-pitch" min="0.5" max="2.0" step="0.05" value="1">
+                                <div class="slider-ticks">
+                                    <span>0.5x</span>
+                                    <span>Normal</span>
+                                    <span>2.0x</span>
+                                </div>
+                            </div>
+
+                            <!-- Lowpass Filter -->
+                            <div class="filter-group">
+                                <div class="filter-header">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" id="enable-lowpass">
+                                        <span class="checkmark"></span>
+                                        Filtro Pasa-Bajos (Efecto Subacuático)
+                                    </label>
+                                </div>
+                                <input type="range" class="xp-slider" id="filter-lowpass" min="100" max="10000" step="50" value="5000">
+                                <div class="filter-desc">Atenúa frecuencias agudas</div>
+                            </div>
+
+                            <!-- Highpass Filter -->
+                            <div class="filter-group">
+                                <div class="filter-header">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" id="enable-highpass">
+                                        <span class="checkmark"></span>
+                                        Filtro Pasa-Altos (Radio Antigua)
+                                    </label>
+                                </div>
+                                <input type="range" class="xp-slider" id="filter-highpass" min="100" max="10000" step="50" value="200">
+                                <div class="filter-desc">Atenúa frecuencias graves</div>
+                            </div>
+
+                            <!-- Echo / Delay -->
+                            <div class="filter-group">
+                                <div class="filter-header">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" id="enable-delay">
+                                        <span class="checkmark"></span>
+                                        Eco / Delay
+                                    </label>
+                                </div>
+                                <div class="sub-slider">
+                                    <label>Tiempo: <span id="delay-time-val">0.3s</span></label>
+                                    <input type="range" class="xp-slider" id="filter-delay-time" min="0.1" max="1.0" step="0.05" value="0.3">
+                                </div>
+                                <div class="sub-slider">
+                                    <label>Retroalimentación: <span id="delay-feedback-val">40%</span></label>
+                                    <input type="range" class="xp-slider" id="filter-delay-feedback" min="0" max="0.9" step="0.05" value="0.4">
+                                </div>
+                            </div>
+
+                            <!-- Distortion -->
+                            <div class="filter-group">
+                                <div class="filter-header">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" id="enable-distortion">
+                                        <span class="checkmark"></span>
+                                        Distorsión / Overdrive
+                                    </label>
+                                </div>
+                                <input type="range" class="xp-slider" id="filter-distortion" min="0" max="100" step="1" value="20">
+                                <div class="filter-desc">Añade saturación analógica</div>
+                            </div>
+
+                            <!-- Reverb -->
+                            <div class="filter-group">
+                                <div class="filter-header">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" id="enable-reverb">
+                                        <span class="checkmark"></span>
+                                        Reverberación (Catedral / Hall)
+                                    </label>
+                                </div>
+                                <input type="range" class="xp-slider" id="filter-reverb" min="0" max="100" step="5" value="50">
+                                <div class="filter-desc">Simula espacialidad acústica</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center Section: Visualizer & Metadata -->
+                    <div class="main-display">
+                        <!-- Playing Song info -->
+                        <div class="song-info-panel">
+                            <div class="album-art-classic">
+                                <svg width="64" height="64" viewBox="0 0 64 64">
+                                    <circle cx="32" cy="32" r="28" fill="#444" stroke="#aaa" stroke-width="2"/>
+                                    <circle cx="32" cy="32" r="12" fill="#888" stroke="#111" stroke-width="3"/>
+                                    <circle cx="32" cy="32" r="4" fill="#111"/>
+                                    <!-- Rotating disc label detail -->
+                                    <path d="M 32,10 A 22,22 0 0,1 54,32" fill="none" stroke="#f00" stroke-width="1.5" stroke-dasharray="3,3"/>
+                                </svg>
+                            </div>
+                            <div class="metadata-text">
+                                <div class="song-title-label" id="current-title">Ninguna canción seleccionada</div>
+                                <div class="song-game-label" id="current-game">Selecciona una pista de la lista</div>
+                                <div class="song-year-label" id="current-year">-</div>
+                            </div>
+                        </div>
+
+                        <!-- Web Audio Canvas Visualizer -->
+                        <div class="visualizer-container" id="player-visualizer-container">
+                            <canvas id="visualizer-canvas" width="400" height="150"></canvas>
+                            <div class="visualizer-modes">
+                                <button class="xp-btn active" id="btn-vis-bars">Espectro</button>
+                                <button class="xp-btn" id="btn-vis-wave">Osciloscopio</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Section: Playlist and Search -->
+                    <div class="playlist-container" id="playlist-container">
+                        <div class="playlist-header">
+                            <div class="search-box">
+                                <input type="text" id="playlist-search" placeholder="Buscar canción...">
+                                <button class="search-clear-btn" id="search-clear">×</button>
+                            </div>
+                            <div class="game-filter">
+                                <select id="playlist-filter">
+                                    <option value="all">Todas las sagas</option>
+                                    <option value="favorites">★ Mis Favoritos</option>
+                                    <!-- Dynamic populated -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="playlist-tracks" id="playlist-tracks">
+                            <div class="loading-label">Cargando canciones...</div>
+                        </div>
+                        <div class="playlist-footer">
+                            <span id="songs-count">0 canciones</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Windows Media Player Bottom Control Bar -->
+                <div class="player-controls">
+                    <!-- Seekbar row -->
+                    <div class="seekbar-container">
+                        <span class="time-display" id="time-current">0:00</span>
+                        <input type="range" class="xp-slider seekbar" id="player-seek" min="0" max="100" value="0" disabled>
+                        <span class="time-display" id="time-duration">0:00</span>
+                    </div>
+
+                    <!-- Buttons and Volume row -->
+                    <div class="controls-row">
+                        <div class="buttons-left">
+                            <button class="control-btn" id="btn-prev" title="Anterior">
+                                <svg viewBox="0 0 24 24"><polygon points='6,6 6,18 9,18 9,6' fill='currentColor'/><polygon points='9,12 18,18 18,6' fill='currentColor'/></svg>
+                            </button>
+                            <button class="control-btn" id="btn-play" title="Reproducir">
+                                <svg viewBox="0 0 24 24" id="play-icon"><polygon points='8,5 19,12 8,19' fill='currentColor'/></svg>
+                            </button>
+                            <button class="control-btn" id="btn-stop" title="Detener">
+                                <svg viewBox="0 0 24 24"><rect x='6' y='6' width='12' height='12' fill='currentColor'/></svg>
+                            </button>
+                            <button class="control-btn" id="btn-next" title="Siguiente">
+                                <svg viewBox="0 0 24 24"><polygon points='15,6 15,18 18,18 18,6' fill='currentColor'/><polygon points='6,6 15,12 6,18' fill='currentColor'/></svg>
+                            </button>
+                        </div>
+                        
+                        <div class="status-center">
+                            <span id="player-status">Listo</span>
+                        </div>
+
+                        <div class="volume-right">
+                            <button class="mute-btn" id="btn-mute" title="Silenciar">
+                                <svg viewBox="0 0 24 24" id="volume-icon"><path d='M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z' fill='currentColor'/></svg>
+                            </button>
+                            <input type="range" class="xp-slider volume-slider" id="player-volume" min="0" max="100" value="80">
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- WINDOW: Notepad (Readme.txt) -->
+        <div class="xp-window minimized" id="window-readme" style="left: 150px; top: 120px; width: 550px; height: 350px;">
+            <div class="title-bar" id="window-readme-header">
+                <div class="title-bar-text">
+                    <img class="window-mini-icon" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M10 4h20l10 10v28c0 2-2 4-4 4H10c-2 0-4-2-4-4V8c0-2 2-4 4-4z' fill='%23ffffff' stroke='%23bbb' stroke-width='2'/></svg>" alt="icon">
+                    Readme.txt - Bloc de notas
+                </div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize" class="btn-minimize" onclick="minimizeWindow('window-readme')"></button>
+                    <button aria-label="Maximize" class="btn-maximize" onclick="toggleMaximize('window-readme')"></button>
+                    <button aria-label="Close" class="btn-close" onclick="closeWindow('window-readme')"></button>
+                </div>
+            </div>
+            <div class="menu-bar">
+                <div class="menu-item">Archivo</div>
+                <div class="menu-item">Edición</div>
+                <div class="menu-item">Formato</div>
+                <div class="menu-item">Ayuda</div>
+            </div>
+            <div class="window-body" style="height: calc(100% - 55px); padding: 0; display: block;">
+                <textarea class="notepad-textarea" readonly>
+=== TOUHOU BGM PLAYER (Edición Windows XP) ===
+
+¡Bienvenido al reproductor de música de la saga de videojuegos Touhou Project!
+
+Este reproductor combina la nostalgia visual del clásico sistema operativo Windows XP (estilo Windows Media Player) con tecnologías modernas de procesamiento de audio web.
+
+CARACTERÍSTICAS:
+----------------
+1. BIBLIOTECA EXTENSA: Más de 200 canciones oficiales de Touhou, desde Touhou 6 (Embodiment of Scarlet Devil) hasta Touhou 17 (Wily Beast and Weakest Creature), incluyendo arreglos especiales de Bad Apple!!.
+2. FILTROS DE AUDIO DIGITAL (DSP) EN TIEMPO REAL:
+   - Tono y Velocidad: Aumenta o disminuye el tempo e infiere efectos agudos/graves.
+   - Pasa-Bajos: Genera un ambiente subacuático amortiguando las frecuencias agudas.
+   - Pasa-Altos: Emula el sonido estridente de una radio AM antigua.
+   - Eco / Delay: Genera reflexiones de sonido repetitivas con retroalimentación ajustable.
+   - Distorsión / Overdrive: Añade calidez analógica y clipping de onda.
+   - Reverberación: Simula la acústica tridimensional de salas gigantes o catedrales.
+3. VISUALIZADOR DINÁMICO: Renderizado nativo por Canvas en modo "Espectro" o modo "Osciloscopio".
+4. INTERFAZ INTERACTIVA: Las ventanas de este escritorio de XP son arrastrables, maximizables, y se pueden minimizar a la barra de tareas.
+
+INFORMACIÓN LEGAL:
+------------------
+- La música de Touhou Project y los personajes pertenecen a Team Shanghai Alice / ZUN.
+- Las pistas de audio son provistas por la comunidad y recopiladas mediante archivos directos de Internet Archive que permiten CORS.
+
+¡Disfruta del viaje musical por Gensokyo!</textarea>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Taskbar -->
+    <div class="taskbar">
+        
+        <!-- Start Button -->
+        <button class="start-btn" id="start-btn" onclick="toggleStartMenu()">
+            <span class="start-flag"></span>
+            inicio
+        </button>
+
+        <!-- Active Window buttons in Taskbar -->
+        <div class="taskbar-tasks" id="taskbar-tasks">
+            <div class="task-btn active" id="taskbar-btn-window-player" onclick="toggleMinimizeFromTaskbar('window-player')">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect x='6' y='6' width='36' height='36' rx='8' fill='%23ffffff'/><circle cx='24' cy='24' r='14' fill='%230055ff'/><polygon points='20,17 32,24 20,31' fill='%23ffffff'/></svg>">
+                <span>Touhou Media Player</span>
+            </div>
+            <div class="task-btn hidden" id="taskbar-btn-window-readme" onclick="toggleMinimizeFromTaskbar('window-readme')">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M10 4h20l10 10v28c0 2-2 4-4 4H10c-2 0-4-2-4-4V8c0-2 2-4 4-4z' fill='%23ffffff' stroke='%23bbb' stroke-width='2'/></svg>">
+                <span>Readme.txt - Bloc...</span>
+            </div>
+        </div>
+
+        <!-- System Tray -->
+        <div class="system-tray">
+            <div class="tray-icon" title="Volumen">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff"><path d='M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z'/></svg>
+            </div>
+            <div class="tray-icon clock" id="tray-clock">00:00</div>
+        </div>
+    </div>
+
+    <!-- Start Menu Panel -->
+    <div class="start-menu hidden" id="start-menu">
+        <div class="start-menu-header">
+            <div class="user-avatar">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+            </div>
+            <div class="user-name">Administrador de Gensokyo</div>
+        </div>
+        <div class="start-menu-body">
+            <!-- Left Column: Programs -->
+            <div class="start-menu-left">
+                <div class="start-item hover-effect" onclick="openWindow('window-player')">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect x='6' y='6' width='36' height='36' rx='8' fill='%230055ff'/><circle cx='24' cy='24' r='14' fill='%23ffffff'/><polygon points='20,17 32,24 20,31' fill='%230055ff'/></svg>">
+                    <div class="start-item-text">
+                        <div class="title">Touhou Media Player</div>
+                        <div class="desc">Reproductor de música</div>
+                    </div>
+                </div>
+                <div class="start-item hover-effect" onclick="openWindow('window-readme')">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M10 4h20l10 10v28c0 2-2 4-4 4H10c-2 0-4-2-4-4V8c0-2 2-4 4-4z' fill='%23fff' stroke='%23bbb' stroke-width='2'/></svg>">
+                    <div class="start-item-text">
+                        <div class="title">Readme.txt</div>
+                        <div class="desc">Bloc de notas (Ayuda)</div>
+                    </div>
+                </div>
+                <hr class="start-menu-divider">
+                
+                <div class="all-programs-header">Filtro rápido por juego:</div>
+                <div class="game-quick-links" id="start-game-links">
+                    <!-- Dynamic games list to filter -->
+                </div>
+            </div>
+            <!-- Right Column: Shortcuts -->
+            <div class="start-menu-right">
+                <div class="start-right-item" onclick="alert('Explorando Mi PC - Carpeta de música vacía')">Mis documentos</div>
+                <div class="start-right-item" onclick="openWindow('window-player')">Mi música reciente</div>
+                <div class="start-right-item" onclick="alert('Abriendo Panel de Control de Audio...')">Panel de control</div>
+                <div class="start-right-item" onclick="window.open('https://touhouwiki.net', '_blank')">Ayuda y soporte</div>
+                <div class="start-right-item" onclick="window.open('https://archive.org/details/audio', '_blank')">Buscar en internet</div>
+            </div>
+        </div>
+        <div class="start-menu-footer">
+            <button class="logoff-btn" onclick="alert('Cerrando sesión...')">Log Off</button>
+            <button class="shutdown-btn" onclick="shutdownVirtualPC()">Shut Down</button>
+        </div>
+    </div>
+
+    <!-- Hidden system error dialog / Alert sound triggers -->
+    <div id="error-dialog" class="xp-window hidden" style="width: 320px; left: 40%; top: 40%; z-index: 9999;">
+        <div class="title-bar">
+            <div class="title-bar-text">Mensaje del Sistema</div>
+            <div class="title-bar-controls">
+                <button aria-label="Close" class="btn-close" onclick="closeErrorDialog()"></button>
+            </div>
+        </div>
+        <div class="window-body" style="padding: 15px;">
+            <div class="error-content" style="display: flex; align-items: center; gap: 15px;">
+                <div class="error-icon" style="color: #ff0000; font-size: 32px; font-weight: bold; width: 40px; height: 40px; border: 3px solid #ff0000; border-radius: 50%; display: flex; align-items: center; justify-content: center;">X</div>
+                <div id="error-message" style="font-family: Tahoma, sans-serif; font-size: 11px;">Ocurrió un error inesperado.</div>
+            </div>
+            <div style="text-align: right; margin-top: 15px;">
+                <button class="xp-btn" style="min-width: 75px; padding: 4px;" onclick="closeErrorDialog()">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Element -->
+    <audio id="main-audio" crossorigin="anonymous"></audio>
+
+    <script src="player.js"></script>
+</body>
+</html>
