@@ -192,6 +192,7 @@ LEGAL INFORMATION:
 ------------------
 - Touhou Project music and characters belong to Team Shanghai Alice / ZUN.
 - Audio tracks are compiled from community-hosted, CORS-enabled Archive.org collections.
+- Reimu character sprites are ripped by DarkOverord (https://www.spriters-resource.com/profile/darkoverord/).
 
 Enjoy your musical journey through Gensokyo!`
     },
@@ -331,6 +332,7 @@ INFORMACIÓN LEGAL:
 ------------------
 - La música de Touhou Project y los personajes pertenecen a Team Shanghai Alice / ZUN.
 - Las pistas de audio son provistas por la comunidad y recopiladas mediante archivos directos de Internet Archive que permiten CORS.
+- Los sprites del personaje de Reimu han sido extraídos por DarkOverord (https://www.spriters-resource.com/profile/darkoverord/).
 
 ¡Disfruta del viaje musical por Gensokyo!`
     }
