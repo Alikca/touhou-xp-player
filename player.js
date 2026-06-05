@@ -1672,7 +1672,6 @@ function gameOverMinesweeper(isWin) {
     if (isWin) {
         document.getElementById('smiley-face').textContent = "😎";
         document.getElementById('mines-counter').textContent = "000";
-        playSystemSound(XP_STARTUP_URL);
     } else {
         document.getElementById('smiley-face').textContent = "😵";
         playSystemSound(XP_ERROR_URL);
