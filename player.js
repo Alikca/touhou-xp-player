@@ -124,6 +124,18 @@ const i18n = {
         btn_next: "Next",
         btn_mute: "Mute",
         btn_unmute: "Unmute",
+        desktop_minesweeper: "Minesweeper",
+        desktop_paint: "Paint",
+        taskbar_minesweeper: "Minesweeper",
+        taskbar_paint: "untitled - Paint",
+        minesweeper_title: "Minesweeper",
+        paint_title: "untitled - Paint",
+        menu_game: "Game",
+        menu_new_game: "New",
+        paint_new: "New",
+        paint_save: "Save Image...",
+        paint_undo: "Undo (Ctrl+Z)",
+        paint_clear: "Clear Image",
         
         // Dynamic labels & alerts
         no_song_selected: "No song selected",
@@ -245,6 +257,18 @@ Enjoy your musical journey through Gensokyo!`
         btn_next: "Siguiente",
         btn_mute: "Silenciar",
         btn_unmute: "Activar sonido",
+        desktop_minesweeper: "Buscaminas",
+        desktop_paint: "Paint",
+        taskbar_minesweeper: "Buscaminas",
+        taskbar_paint: "sin título - Paint",
+        minesweeper_title: "Buscaminas",
+        paint_title: "sin título - Paint",
+        menu_game: "Juego",
+        menu_new_game: "Nuevo",
+        paint_new: "Nuevo",
+        paint_save: "Guardar imagen...",
+        paint_undo: "Deshacer (Ctrl+Z)",
+        paint_clear: "Borrar imagen",
         
         // Dynamic labels & alerts
         no_song_selected: "Ninguna canción seleccionada",
@@ -348,6 +372,10 @@ window.addEventListener('DOMContentLoaded', () => {
     audioEl.volume = savedVolume;
     volumeSlider.value = savedVolume * 100;
     updateVolumeIcon(savedVolume);
+
+    // Initialize Minesweeper & Paint
+    initMinesweeper();
+    initPaint();
 
     // Apply active language configuration
     updateLanguageUI();
@@ -1424,3 +1452,465 @@ function playStartupOnce() {
 
 document.addEventListener('click', playStartupOnce);
 document.addEventListener('keydown', playStartupOnce);
+
+/* ==========================================================================
+   MINESWEEPER LOGIC
+   ========================================================================= */
+let msRows = 9;
+let msCols = 9;
+let msMinesCount = 10;
+let msGrid = [];
+let msMinesLeft = 10;
+let msTimer = 0;
+let msTimerInterval = null;
+let msFirstClick = true;
+let msGameOver = false;
+
+function initMinesweeper() {
+    resetMinesweeper();
+}
+
+function resetMinesweeper() {
+    msMinesLeft = msMinesCount;
+    msTimer = 0;
+    msFirstClick = true;
+    msGameOver = false;
+    
+    if (msTimerInterval) {
+        clearInterval(msTimerInterval);
+        msTimerInterval = null;
+    }
+    
+    document.getElementById('mines-counter').textContent = String(msMinesLeft).padStart(3, '0');
+    document.getElementById('mines-timer').textContent = "000";
+    document.getElementById('smiley-face').textContent = "🙂";
+    
+    const board = document.getElementById('minesweeper-board');
+    board.innerHTML = '';
+    msGrid = [];
+    
+    for (let r = 0; r < msRows; r++) {
+        msGrid[r] = [];
+        for (let c = 0; c < msCols; c++) {
+            const tile = {
+                r: r,
+                c: c,
+                isMine: false,
+                isRevealed: false,
+                isFlagged: false,
+                count: 0,
+                el: null
+            };
+            
+            const tileEl = document.createElement('div');
+            tileEl.className = 'tile unrevealed';
+            tileEl.dataset.row = r;
+            tileEl.dataset.col = c;
+            
+            // Left click
+            tileEl.addEventListener('click', () => {
+                if (msGameOver || tile.isFlagged) return;
+                if (msFirstClick) {
+                    msFirstClick = false;
+                    placeMines(r, c);
+                    startMinesweeperTimer();
+                }
+                revealTile(r, c);
+            });
+            
+            // Right click (Flag)
+            tileEl.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (msGameOver || tile.isRevealed) return;
+                toggleFlag(tile);
+            });
+            
+            tile.el = tileEl;
+            board.appendChild(tileEl);
+            msGrid[r][c] = tile;
+        }
+    }
+}
+
+function startMinesweeperTimer() {
+    msTimerInterval = setInterval(() => {
+        msTimer++;
+        if (msTimer > 999) msTimer = 999;
+        document.getElementById('mines-timer').textContent = String(msTimer).padStart(3, '0');
+    }, 1000);
+}
+
+function placeMines(startR, startC) {
+    let placed = 0;
+    while (placed < msMinesCount) {
+        const r = Math.floor(Math.random() * msRows);
+        const c = Math.floor(Math.random() * msCols);
+        
+        // Don't place a mine on starting tile or its immediate neighbors
+        const isStartOrNeighbor = Math.abs(r - startR) <= 1 && Math.abs(c - startC) <= 1;
+        
+        if (!msGrid[r][c].isMine && !isStartOrNeighbor) {
+            msGrid[r][c].isMine = true;
+            placed++;
+        }
+    }
+    
+    // Calculate neighbor counts
+    for (let r = 0; r < msRows; r++) {
+        for (let c = 0; c < msCols; c++) {
+            if (msGrid[r][c].isMine) continue;
+            let count = 0;
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    const nr = r + dr;
+                    const nc = c + dc;
+                    if (nr >= 0 && nr < msRows && nc >= 0 && nc < msCols) {
+                        if (msGrid[nr][nc].isMine) count++;
+                    }
+                }
+            }
+            msGrid[r][c].count = count;
+        }
+    }
+}
+
+function revealTile(r, c) {
+    const tile = msGrid[r][c];
+    if (tile.isRevealed || tile.isFlagged) return;
+    
+    tile.isRevealed = true;
+    tile.el.className = 'tile revealed';
+    
+    if (tile.isMine) {
+        // Exploded! Game Over
+        tile.el.classList.add('mine-exploded');
+        tile.el.textContent = '💣';
+        gameOverMinesweeper(false);
+        return;
+    }
+    
+    if (tile.count > 0) {
+        tile.el.textContent = tile.count;
+        tile.el.classList.add(`n-${tile.count}`);
+    } else {
+        // Flood fill empty neighbors
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                const nr = r + dr;
+                const nc = c + dc;
+                if (nr >= 0 && nr < msRows && nc >= 0 && nc < msCols) {
+                    revealTile(nr, nc);
+                }
+            }
+        }
+    }
+    
+    checkMinesweeperWin();
+}
+
+function toggleFlag(tile) {
+    if (tile.isRevealed) return;
+    tile.isFlagged = !tile.isFlagged;
+    
+    if (tile.isFlagged) {
+        tile.el.className = 'tile unrevealed flagged';
+        tile.el.textContent = '🚩';
+        msMinesLeft--;
+    } else {
+        tile.el.className = 'tile unrevealed';
+        tile.el.textContent = '';
+        msMinesLeft++;
+    }
+    document.getElementById('mines-counter').textContent = String(Math.max(0, msMinesLeft)).padStart(3, '0');
+}
+
+function checkMinesweeperWin() {
+    let unrevealedCount = 0;
+    for (let r = 0; r < msRows; r++) {
+        for (let c = 0; c < msCols; c++) {
+            if (!msGrid[r][c].isRevealed) {
+                unrevealedCount++;
+            }
+        }
+    }
+    if (unrevealedCount === msMinesCount) {
+        gameOverMinesweeper(true);
+    }
+}
+
+function gameOverMinesweeper(isWin) {
+    msGameOver = true;
+    if (msTimerInterval) {
+        clearInterval(msTimerInterval);
+        msTimerInterval = null;
+    }
+    
+    // Reveal all mines
+    for (let r = 0; r < msRows; r++) {
+        for (let c = 0; c < msCols; c++) {
+            const tile = msGrid[r][c];
+            if (tile.isMine) {
+                if (isWin) {
+                    if (!tile.isFlagged) {
+                        tile.isFlagged = true;
+                        tile.el.className = 'tile unrevealed flagged';
+                        tile.el.textContent = '🚩';
+                    }
+                } else {
+                    if (!tile.isRevealed && !tile.isFlagged) {
+                        tile.el.className = 'tile revealed mine';
+                        tile.el.textContent = '💣';
+                    }
+                }
+            } else if (tile.isFlagged && !tile.isMine) {
+                // Incorrect flag
+                tile.el.textContent = '❌';
+            }
+        }
+    }
+    
+    if (isWin) {
+        document.getElementById('smiley-face').textContent = "😎";
+        document.getElementById('mines-counter').textContent = "000";
+        playSystemSound(XP_STARTUP_URL);
+    } else {
+        document.getElementById('smiley-face').textContent = "😵";
+        playSystemSound(XP_ERROR_URL);
+    }
+}
+
+/* ==========================================================================
+   PAINT LOGIC
+   ========================================================================== */
+let paintCanvas = null;
+let paintCtx = null;
+let paintTool = 'pencil';
+let paintIsDrawing = false;
+let paintFgColor = '#000000';
+let paintBgColor = '#ffffff';
+let paintBrushSize = 2;
+let paintStartX = 0;
+let paintStartY = 0;
+let paintUndoStack = [];
+const paintMaxUndo = 10;
+let paintTempImgData = null;
+
+const PAINT_PALETTE_COLORS = [
+    '#000000', '#808080', '#800000', '#808000', '#008000', '#008080', '#000080', '#800080', '#808040', '#004040', '#0080ff', '#004080', '#4000ff', '#804000',
+    '#ffffff', '#c0c0c0', '#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ffff80', '#00ff80', '#80ffff', '#8080ff', '#ff8000', '#ff8080'
+];
+
+function initPaint() {
+    paintCanvas = document.getElementById('paint-canvas');
+    paintCtx = paintCanvas.getContext('2d', { willReadFrequently: true });
+    
+    // Set initial canvas color to white
+    paintCtx.fillStyle = '#ffffff';
+    paintCtx.fillRect(0, 0, paintCanvas.width, paintCanvas.height);
+    
+    // Populate palette
+    const palette = document.querySelector('.paint-palette');
+    palette.innerHTML = '';
+    PAINT_PALETTE_COLORS.forEach(color => {
+        const box = document.createElement('div');
+        box.className = 'color-box';
+        box.style.backgroundColor = color;
+        
+        // Left click: set FG color
+        box.addEventListener('click', () => {
+            paintFgColor = color;
+            document.getElementById('paint-fg-color').style.backgroundColor = color;
+        });
+        
+        // Right click: set BG color
+        box.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            paintBgColor = color;
+            document.getElementById('paint-bg-color').style.backgroundColor = color;
+        });
+        
+        palette.appendChild(box);
+    });
+    
+    // Register mouse canvas events
+    paintCanvas.addEventListener('mousedown', (e) => {
+        const rect = paintCanvas.getBoundingClientRect();
+        const x = Math.floor(e.clientX - rect.left);
+        const y = Math.floor(e.clientY - rect.top);
+        
+        savePaintState();
+        paintIsDrawing = true;
+        paintStartX = x;
+        paintStartY = y;
+        paintCtx.beginPath();
+        paintCtx.moveTo(x, y);
+        
+        // Configure styles
+        paintCtx.strokeStyle = (paintTool === 'eraser') ? paintBgColor : paintFgColor;
+        paintCtx.fillStyle = paintFgColor;
+        paintCtx.lineWidth = (paintTool === 'pencil') ? 1 : paintBrushSize;
+        if (paintTool === 'eraser') paintCtx.lineWidth = paintBrushSize * 3;
+        paintCtx.lineCap = (paintTool === 'eraser') ? 'square' : 'round';
+        paintCtx.lineJoin = 'round';
+        
+        if (paintTool === 'bucket') {
+            paintIsDrawing = false;
+            paintFloodFill(x, y, paintFgColor);
+        } else if (paintTool === 'picker') {
+            paintIsDrawing = false;
+            const imgData = paintCtx.getImageData(x, y, 1, 1);
+            const r = imgData.data[0];
+            const g = imgData.data[1];
+            const b = imgData.data[2];
+            const hex = '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            paintFgColor = hex;
+            document.getElementById('paint-fg-color').style.backgroundColor = hex;
+        } else if (paintTool === 'line' || paintTool === 'rect' || paintTool === 'circle') {
+            paintTempImgData = paintCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height);
+        } else if (paintTool === 'pencil' || paintTool === 'brush' || paintTool === 'eraser') {
+            // Draw initial point
+            paintCtx.lineTo(x, y);
+            paintCtx.stroke();
+        }
+    });
+    
+    paintCanvas.addEventListener('mousemove', (e) => {
+        if (!paintIsDrawing) return;
+        
+        const rect = paintCanvas.getBoundingClientRect();
+        const x = Math.floor(e.clientX - rect.left);
+        const y = Math.floor(e.clientY - rect.top);
+        
+        if (paintTool === 'pencil' || paintTool === 'brush' || paintTool === 'eraser') {
+            paintCtx.lineTo(x, y);
+            paintCtx.stroke();
+        } else if (paintTool === 'line' || paintTool === 'rect' || paintTool === 'circle') {
+            // Restore previous canvas state and draw rubber-band preview
+            paintCtx.putImageData(paintTempImgData, 0, 0);
+            paintCtx.beginPath();
+            
+            if (paintTool === 'line') {
+                paintCtx.moveTo(paintStartX, paintStartY);
+                paintCtx.lineTo(x, y);
+                paintCtx.stroke();
+            } else if (paintTool === 'rect') {
+                paintCtx.strokeRect(paintStartX, paintStartY, x - paintStartX, y - paintStartY);
+            } else if (paintTool === 'circle') {
+                const radius = Math.sqrt(Math.pow(x - paintStartX, 2) + Math.pow(y - paintStartY, 2));
+                paintCtx.arc(paintStartX, paintStartY, radius, 0, 2 * Math.PI);
+                paintCtx.stroke();
+            }
+        }
+    });
+    
+    paintCanvas.addEventListener('mouseup', () => {
+        paintIsDrawing = false;
+        paintTempImgData = null;
+    });
+    
+    paintCanvas.addEventListener('mouseout', () => {
+        paintIsDrawing = false;
+        paintTempImgData = null;
+    });
+    
+    // Add hotkeys for Paint
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+Z Undo
+        if (e.ctrlKey && e.key === 'z') {
+            const paintWin = document.getElementById('window-paint');
+            if (paintWin && paintWin.classList.contains('active') && !paintWin.classList.contains('minimized')) {
+                e.preventDefault();
+                undoPaint();
+            }
+        }
+    });
+}
+
+function setPaintTool(tool) {
+    paintTool = tool;
+    document.querySelectorAll('.paint-tool').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    const activeBtn = document.getElementById(`tool-${tool}`);
+    if (activeBtn) activeBtn.classList.add('active');
+}
+
+function setBrushSize(size, e) {
+    paintBrushSize = size;
+    document.querySelectorAll('.brush-size').forEach(el => el.classList.remove('active'));
+    if (e && e.currentTarget) {
+        e.currentTarget.classList.add('active');
+    }
+}
+
+function savePaintState() {
+    if (paintUndoStack.length >= paintMaxUndo) {
+        paintUndoStack.shift();
+    }
+    paintUndoStack.push(paintCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height));
+}
+
+function undoPaint() {
+    if (paintUndoStack.length > 0) {
+        const state = paintUndoStack.pop();
+        paintCtx.putImageData(state, 0, 0);
+    }
+}
+
+function clearPaintCanvas() {
+    savePaintState();
+    paintCtx.fillStyle = '#ffffff';
+    paintCtx.fillRect(0, 0, paintCanvas.width, paintCanvas.height);
+}
+
+function downloadPaintCanvas() {
+    const link = document.createElement('a');
+    link.download = 'untitled.png';
+    link.href = paintCanvas.toDataURL();
+    link.click();
+}
+
+function paintFloodFill(startX, startY, fillHex) {
+    const canvasWidth = paintCanvas.width;
+    const canvasHeight = paintCanvas.height;
+    
+    // Parse hex to RGBA
+    const r = parseInt(fillHex.slice(1, 3), 16);
+    const g = parseInt(fillHex.slice(3, 5), 16);
+    const b = parseInt(fillHex.slice(5, 7), 16);
+    const a = 255;
+    
+    const imgData = paintCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+    const data = imgData.data;
+    
+    const getPixelIdx = (x, y) => (y * canvasWidth + x) * 4;
+    const startIdx = getPixelIdx(startX, startY);
+    
+    const targetR = data[startIdx];
+    const targetG = data[startIdx + 1];
+    const targetB = data[startIdx + 2];
+    const targetA = data[startIdx + 3];
+    
+    // If target color is already the fill color, cancel fill
+    if (targetR === r && targetG === g && targetB === b && targetA === a) return;
+    
+    const queue = [[startX, startY]];
+    while (queue.length > 0) {
+        const [currX, currY] = queue.pop();
+        const idx = getPixelIdx(currX, currY);
+        
+        if (data[idx] === targetR && data[idx + 1] === targetG && data[idx + 2] === targetB && data[idx + 3] === targetA) {
+            data[idx] = r;
+            data[idx + 1] = g;
+            data[idx + 2] = b;
+            data[idx + 3] = a;
+            
+            if (currX > 0) queue.push([currX - 1, currY]);
+            if (currX < canvasWidth - 1) queue.push([currX + 1, currY]);
+            if (currY > 0) queue.push([currX, currY - 1]);
+            if (currY < canvasHeight - 1) queue.push([currX, currY + 1]);
+        }
+    }
+    paintCtx.putImageData(imgData, 0, 0);
+}
+

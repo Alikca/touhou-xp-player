@@ -34,6 +34,16 @@
                 <img id="recycle-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect x='12' y='14' width='24' height='26' rx='3' fill='%23dedede' stroke='%23777' stroke-width='2'/><line x1='8' y1='10' x2='40' y2='10' stroke='%23777' stroke-width='4' stroke-linecap='round'/><path d='M18 10V6h12v4' fill='none' stroke='%23777' stroke-width='2'/><line x1='18' y1='18' x2='18' y2='34' stroke='%23999' stroke-width='2'/><line x1='24' y1='18' x2='24' y2='34' stroke='%23999' stroke-width='2'/><line x1='30' y1='18' x2='30' y2='34' stroke='%23999' stroke-width='2'/></svg>" alt="Recycle Bin Icon">
                 <span id="recycle-text" data-i18n="desktop_recycle">Recycle Bin</span>
             </div>
+            
+            <div class="desktop-icon" id="icon-minesweeper" data-target="window-minesweeper">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect x='6' y='6' width='36' height='36' rx='6' fill='%23c0c0c0' stroke='%23808080' stroke-width='2'/><circle cx='24' cy='24' r='10' fill='%23000'/><line x1='24' y1='8' x2='24' y2='40' stroke='%23000' stroke-width='3'/><line x1='8' y1='24' x2='40' y2='24' stroke='%23000' stroke-width='3'/><line x1='13' y1='13' x2='35' y2='35' stroke='%23000' stroke-width='3'/><line x1='13' y1='35' x2='35' y2='13' stroke='%23000' stroke-width='3'/><circle cx='24' cy='24' r='6' fill='%23555'/><circle cx='21' cy='21' r='2' fill='%23fff'/><rect x='10' y='10' width='4' height='4' fill='%23ff0000'/></svg>" alt="Minesweeper Icon">
+                <span data-i18n="desktop_minesweeper">Minesweeper</span>
+            </div>
+
+            <div class="desktop-icon" id="icon-paint" data-target="window-paint">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M6 34c0-6 8-10 14-10s12 3 14 8c2 5-2 10-8 10S6 40 6 34z' fill='%23f4f4f4' stroke='%23bbb' stroke-width='2'/><ellipse cx='20' cy='32' rx='12' ry='7' fill='%23ece9d8' stroke='%23707070' stroke-width='2'/><circle cx='13' cy='30' r='3' fill='%23ff0000'/><circle cx='18' cy='28' r='3' fill='%2300ff00'/><circle cx='23' cy='29' r='3' fill='%230000ff'/><circle cx='27' cy='33' r='3' fill='%23ffff00'/><circle cx='20' cy='34' r='3' fill='%23ff00ff'/><rect x='30' y='8' width='8' height='18' rx='2' fill='%23dd9933' transform='rotate(30 34 17)'/><path d='M38 6l6 6-4 4-6-6 4-4z' fill='%23333'/><path d='M16 34c1-2 3-2 4 0s-1 3-2 3-3-1-2-3z' fill='%23808080'/></svg>" alt="Paint Icon">
+                <span data-i18n="desktop_paint">Paint</span>
+            </div>
         </div>
 
         <!-- WINDOW: Touhou Media Player -->
@@ -312,6 +322,125 @@
             </div>
         </div>
 
+        <!-- WINDOW: Minesweeper -->
+        <div class="xp-window minimized" id="window-minesweeper" style="left: 220px; top: 90px; width: 172px; height: auto;">
+            <div class="title-bar" id="window-minesweeper-header">
+                <div class="title-bar-text" data-i18n="minesweeper_title">
+                    <img class="window-mini-icon" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><circle cx='24' cy='24' r='10' fill='%23000'/><line x1='24' y1='8' x2='24' y2='40' stroke='%23000' stroke-width='3'/><line x1='8' y1='24' x2='40' y2='24' stroke='%23000' stroke-width='3'/></svg>" alt="icon">
+                    Minesweeper
+                </div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize" class="btn-minimize" onclick="minimizeWindow('window-minesweeper')"></button>
+                    <button aria-label="Maximize" class="btn-maximize" disabled style="opacity: 0.5;"></button>
+                    <button aria-label="Close" class="btn-close" onclick="closeWindow('window-minesweeper')"></button>
+                </div>
+            </div>
+            
+            <div class="menu-bar" style="padding: 2px 6px;">
+                <div class="menu-item"><span data-i18n="menu_game">Game</span>
+                    <div class="dropdown-menu">
+                        <div onclick="resetMinesweeper()" data-i18n="menu_new_game">New</div>
+                        <hr>
+                        <div onclick="closeWindow('window-minesweeper')" data-i18n="menu_exit">Exit</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="window-body" style="padding: 6px; display: block; background-color: #c0c0c0; margin: 0;">
+                <!-- Minesweeper Border Container -->
+                <div class="minesweeper-container">
+                    <!-- Score Bar (Beveled) -->
+                    <div class="minesweeper-scorebar">
+                        <div class="mine-digits" id="mines-counter">010</div>
+                        <button class="smiley-btn" id="smiley-face" onclick="resetMinesweeper()">🙂</button>
+                        <div class="mine-digits" id="mines-timer">000</div>
+                    </div>
+                    
+                    <!-- Grid Container (Beveled) -->
+                    <div class="minesweeper-grid" id="minesweeper-board">
+                        <!-- 9x9 grid generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WINDOW: Paint -->
+        <div class="xp-window minimized" id="window-paint" style="left: 140px; top: 70px; width: 620px; height: 460px;">
+            <div class="title-bar" id="window-paint-header">
+                <div class="title-bar-text" id="paint-titlebar-text" data-i18n="paint_title">
+                    <img class="window-mini-icon" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><ellipse cx='24' cy='28' rx='14' ry='8' fill='%23ece9d8' stroke='%23707070' stroke-width='2'/></svg>" alt="icon">
+                    untitled - Paint
+                </div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize" class="btn-minimize" onclick="minimizeWindow('window-paint')"></button>
+                    <button aria-label="Maximize" class="btn-maximize" onclick="toggleMaximize('window-paint')"></button>
+                    <button aria-label="Close" class="btn-close" onclick="closeWindow('window-paint')"></button>
+                </div>
+            </div>
+            
+            <div class="menu-bar">
+                <div class="menu-item"><span data-i18n="notepad_menu_file">File</span>
+                    <div class="dropdown-menu">
+                        <div onclick="clearPaintCanvas()" data-i18n="paint_new">New</div>
+                        <div onclick="downloadPaintCanvas()" data-i18n="paint_save">Save Image...</div>
+                        <hr>
+                        <div onclick="closeWindow('window-paint')" data-i18n="menu_exit">Exit</div>
+                    </div>
+                </div>
+                <div class="menu-item"><span data-i18n="notepad_menu_edit">Edit</span>
+                    <div class="dropdown-menu">
+                        <div onclick="undoPaint()" data-i18n="paint_undo">Undo (Ctrl+Z)</div>
+                        <div onclick="clearPaintCanvas()" data-i18n="paint_clear">Clear Image</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="window-body" style="padding: 0; height: calc(100% - 55px); display: flex; flex-direction: column; background-color: #c0c0c0; overflow: hidden; margin: 0;">
+                <!-- Main Workspace (Toolbar + Canvas) -->
+                <div class="paint-workspace" style="display: flex; flex-grow: 1; min-height: 0; width: 100%;">
+                    
+                    <!-- Left Toolbar (Tool Box) -->
+                    <div class="paint-toolbar" style="width: 50px; background-color: #c0c0c0; display: flex; flex-wrap: wrap; align-content: flex-start; padding: 4px; gap: 2px; border-right: 2px solid #fff; box-sizing: border-box;">
+                        <button class="paint-tool active" id="tool-pencil" title="Pencil" onclick="setPaintTool('pencil')">✏️</button>
+                        <button class="paint-tool" id="tool-brush" title="Brush" onclick="setPaintTool('brush')">🖌️</button>
+                        <button class="paint-tool" id="tool-eraser" title="Eraser" onclick="setPaintTool('eraser')">🧽</button>
+                        <button class="paint-tool" id="tool-bucket" title="Fill (Paint Bucket)" onclick="setPaintTool('bucket')">🪣</button>
+                        <button class="paint-tool" id="tool-picker" title="Pick Color (Eyedropper)" onclick="setPaintTool('picker')">🧪</button>
+                        <button class="paint-tool" id="tool-line" title="Line" onclick="setPaintTool('line')">➖</button>
+                        <button class="paint-tool" id="tool-rect" title="Rectangle" onclick="setPaintTool('rect')">⬛</button>
+                        <button class="paint-tool" id="tool-circle" title="Circle" onclick="setPaintTool('circle')">⚪</button>
+                        
+                        <!-- Tool Options Area (e.g. Brush size) -->
+                        <div class="paint-tool-options" id="paint-brush-sizes" style="width: 100%; height: 60px; margin-top: 8px; border: 2px inset #fff; background-color: #f0f0f0; display: flex; flex-direction: column; justify-content: space-around; align-items: center; padding: 2px; box-sizing: border-box;">
+                            <div class="brush-size active" data-size="2" onclick="setBrushSize(2, event)" style="width: 100%; display: flex; justify-content: center; align-items: center; height: 12px; cursor: pointer;"><div style="width: 2px; height: 2px; background: #000; border-radius: 50%;"></div></div>
+                            <div class="brush-size" data-size="5" onclick="setBrushSize(5, event)" style="width: 100%; display: flex; justify-content: center; align-items: center; height: 12px; cursor: pointer;"><div style="width: 5px; height: 5px; background: #000; border-radius: 50%;"></div></div>
+                            <div class="brush-size" data-size="10" onclick="setBrushSize(10, event)" style="width: 100%; display: flex; justify-content: center; align-items: center; height: 12px; cursor: pointer;"><div style="width: 10px; height: 10px; background: #000; border-radius: 50%;"></div></div>
+                            <div class="brush-size" data-size="18" onclick="setBrushSize(18, event)" style="width: 100%; display: flex; justify-content: center; align-items: center; height: 12px; cursor: pointer;"><div style="width: 18px; height: 18px; background: #000; border-radius: 50%;"></div></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Canvas Drawing Area (Scrollable) -->
+                    <div class="paint-canvas-wrapper" style="flex-grow: 1; background-color: #808080; padding: 4px; display: block; overflow: auto; min-width: 0; min-height: 0; position: relative; border-left: 2px inset #fff; border-top: 2px inset #fff;">
+                        <canvas id="paint-canvas" width="540" height="340" style="background-color: #ffffff; display: block; cursor: crosshair; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Bottom Color Palette Bar -->
+                <div class="paint-color-bar" style="display: flex; align-items: center; padding: 4px; gap: 8px; border-top: 2px solid #fff; background-color: #c0c0c0; height: 44px; box-sizing: border-box; width: 100%;">
+                    <!-- Active colors box -->
+                    <div class="active-colors-box" style="position: relative; width: 32px; height: 32px; border: 2px inset #fff; background: #c0c0c0; box-sizing: border-box; flex-shrink: 0;">
+                        <div id="paint-fg-color" style="position: absolute; left: 2px; top: 2px; width: 18px; height: 18px; background-color: #000000; border: 1px solid #777; z-index: 2;"></div>
+                        <div id="paint-bg-color" style="position: absolute; right: 2px; bottom: 2px; width: 18px; height: 18px; background-color: #ffffff; border: 1px solid #777; z-index: 1;"></div>
+                    </div>
+                    
+                    <!-- Palette list -->
+                    <div class="paint-palette" style="display: flex; flex-wrap: wrap; gap: 2px; width: 420px; align-content: center; height: 100%;">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Bottom Taskbar -->
@@ -332,6 +461,14 @@
             <div class="task-btn hidden" id="taskbar-btn-window-readme" onclick="toggleMinimizeFromTaskbar('window-readme')">
                 <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M10 4h20l10 10v28c0 2-2 4-4 4H10c-2 0-4-2-4-4V8c0-2 2-4 4-4z' fill='%23ffffff' stroke='%23bbb' stroke-width='2'/></svg>">
                 <span data-i18n="taskbar_readme">Readme.txt - Note...</span>
+            </div>
+            <div class="task-btn hidden" id="taskbar-btn-window-minesweeper" onclick="toggleMinimizeFromTaskbar('window-minesweeper')">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><circle cx='24' cy='24' r='12' fill='%23000'/><line x1='24' y1='8' x2='24' y2='40' stroke='%23000' stroke-width='4'/><line x1='8' y1='24' x2='40' y2='24' stroke='%23000' stroke-width='4'/></svg>">
+                <span data-i18n="taskbar_minesweeper">Minesweeper</span>
+            </div>
+            <div class="task-btn hidden" id="taskbar-btn-window-paint" onclick="toggleMinimizeFromTaskbar('window-paint')">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><ellipse cx='24' cy='28' rx='14' ry='8' fill='%23ece9d8' stroke='%23707070' stroke-width='2'/><circle cx='18' cy='26' r='3' fill='%23ff0000'/><circle cx='24' cy='25' r='3' fill='%2300ff00'/><circle cx='30' cy='27' r='3' fill='%230000ff'/></svg>">
+                <span data-i18n="taskbar_paint">untitled - Paint</span>
             </div>
         </div>
 
