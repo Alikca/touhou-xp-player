@@ -1213,6 +1213,7 @@ function playSongAtIndex(index) {
     audioEl.load();
     
     localStorage.setItem('xp_player_saved_song_url', song.url);
+    localStorage.setItem('xp_player_saved_time', '0');
 
     if (!audioSource) {
         initAudio();
@@ -1278,6 +1279,9 @@ function togglePlay() {
     if (isPlaying) {
         audioEl.pause();
     } else {
+        if (!audioSource) {
+            initAudio();
+        }
         if (audioCtx && audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
